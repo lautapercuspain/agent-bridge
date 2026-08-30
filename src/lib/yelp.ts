@@ -70,7 +70,14 @@ export async function searchRestaurants(
 ): Promise<Restaurant[]> {
 	const url = new URL(`${YELP_API_BASE}/businesses/search`);
 	url.searchParams.set("term", params.cuisine ?? "restaurants");
-	url.searchParams.set("location", params.location ?? "San Francisco, CA");
+
+	if (params.latitude != null && params.longitude != null && !params.location) {
+		url.searchParams.set("latitude", String(params.latitude));
+		url.searchParams.set("longitude", String(params.longitude));
+	} else {
+		url.searchParams.set("location", params.location ?? "San Francisco, CA");
+	}
+
 	url.searchParams.set("limit", String(params.limit ?? 10));
 	url.searchParams.set("categories", "food,restaurants");
 

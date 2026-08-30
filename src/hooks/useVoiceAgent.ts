@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { VoiceState } from "@/types";
 
-// executeTool() is a Chromium extension not present in the standard
-// document.modelContext type, so we narrow to the members we use.
 type ExecutableModelContext = {
 	getTools: NonNullable<typeof document.modelContext>["getTools"];
 	executeTool?: (
@@ -12,41 +10,6 @@ type ExecutableModelContext = {
 		inputArguments: string,
 	) => Promise<string | null>;
 };
-
-function float32ToPcm16(float32: Float32Array): Int16Array {
-	const pcm16 = new Int16Array(float32.length);
-	for (let i = 0; i < float32.length; i++) {
-		const s = Math.max(-1, Math.min(1, float32[i]));
-		pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-	}
-	return pcm16;
-}
-
-function pcm16ToFloat32(pcm16: Int16Array): Float32Array {
-	const float32 = new Float32Array(pcm16.length);
-	for (let i = 0; i < pcm16.length; i++) {
-		float32[i] = pcm16[i] / (pcm16[i] < 0 ? 0x8000 : 0x7fff);
-	}
-	return float32;
-}
-
-function arrayBufferToBase64(buffer: ArrayBufferLike): string {
-	const bytes = new Uint8Array(buffer);
-	let binary = "";
-	for (let i = 0; i < bytes.length; i++) {
-		binary += String.fromCharCode(bytes[i]);
-	}
-	return btoa(binary);
-}
-
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
-	const binary = atob(base64);
-	const bytes = new Uint8Array(binary.length);
-	for (let i = 0; i < binary.length; i++) {
-		bytes[i] = binary.charCodeAt(i);
-	}
-	return bytes.buffer;
-}
 
 export function useVoiceAgent() {
 	const [state, setState] = useState<VoiceState>({
@@ -61,30 +24,32 @@ export function useVoiceAgent() {
 	const [error, setError] = useState<string | null>(null);
 	const [activeTool, setActiveTool] = useState<string | null>(null);
 
-	const wsRef = useRef<WebSocket | null>(null);
-	const audioContextRef = useRef<AudioContext | null>(null);
+	const pcRef = useRef<RTCPeerConnection | null>(null);
+	const dcRef = useRef<RTCDataChannel | null>(null);
+	const audioElRef = useRef<HTMLAudioElement | null>(null);
 	const streamRef = useRef<MediaStream | null>(null);
-	const processorRef = useRef<ScriptProcessorNode | null>(null);
 	const toolsRef = useRef<WebMCP.RegisteredTool[]>([]);
 
-	const playAudioDelta = useCallback((base64Audio: string) => {
-		if (!audioContextRef.current) return;
-		const pcm16 = base64ToArrayBuffer(base64Audio);
-		const float32 = pcm16ToFloat32(new Int16Array(pcm16));
-		const buffer = audioContextRef.current.createBuffer(
-			1,
-			float32.length,
-			24000,
-		);
-		buffer.copyToChannel(new Float32Array(float32), 0);
-		const source = audioContextRef.current.createBufferSource();
-		source.buffer = buffer;
-		source.connect(audioContextRef.current.destination);
-		source.start();
+	const sendEvent = useCallback((event: Record<string, unknown>) => {
+		const dc = dcRef.current;
+		if (dc?.readyState === "open") {
+			dc.send(JSON.stringify(event));
+		}
 	}, []);
 
-	// Run a WebMCP tool the voice model requested, then hand the result back so
-	// the model can speak a natural response.
+	const createAudioResponse = useCallback(
+		(instructions?: string) => {
+			sendEvent({
+				type: "response.create",
+				response: {
+					output_modalities: ["audio"],
+					...(instructions ? { instructions } : {}),
+				},
+			});
+		},
+		[sendEvent],
+	);
+
 	const executeToolCall = useCallback(
 		async (callId: string, name: string, argsJson: string) => {
 			const ctx = document.modelContext as ExecutableModelContext | undefined;
@@ -105,18 +70,13 @@ export function useVoiceAgent() {
 				}
 			}
 
-			const ws = wsRef.current;
-			if (ws?.readyState === WebSocket.OPEN) {
-				ws.send(
-					JSON.stringify({
-						type: "conversation.item.create",
-						item: { type: "function_call_output", call_id: callId, output },
-					}),
-				);
-				ws.send(JSON.stringify({ type: "response.create" }));
-			}
+			sendEvent({
+				type: "conversation.item.create",
+				item: { type: "function_call_output", call_id: callId, output },
+			});
+			createAudioResponse();
 		},
-		[],
+		[createAudioResponse, sendEvent],
 	);
 
 	const handleServerEvent = useCallback(
@@ -125,6 +85,7 @@ export function useVoiceAgent() {
 				case "response.output_audio_transcript.delta":
 					setState((s) => ({
 						...s,
+						isSpeaking: true,
 						transcript: s.transcript + (event.delta as string),
 					}));
 					break;
@@ -135,9 +96,8 @@ export function useVoiceAgent() {
 					]);
 					setState((s) => ({ ...s, transcript: "", isSpeaking: false }));
 					break;
-				case "response.output_audio.delta":
-					setState((s) => ({ ...s, isSpeaking: true }));
-					playAudioDelta(event.delta as string);
+				case "response.done":
+					setState((s) => ({ ...s, isSpeaking: false }));
 					break;
 				case "response.function_call_arguments.done":
 					executeToolCall(
@@ -163,91 +123,77 @@ export function useVoiceAgent() {
 					break;
 			}
 		},
-		[playAudioDelta, executeToolCall],
+		[executeToolCall],
 	);
 
-	const stopAudioCapture = useCallback(() => {
-		processorRef.current?.disconnect();
-		processorRef.current = null;
+	// Stable ref so the data channel callback always calls the latest handler.
+	const handleServerEventRef = useRef(handleServerEvent);
+	useEffect(() => {
+		handleServerEventRef.current = handleServerEvent;
+	}, [handleServerEvent]);
+
+	const cleanup = useCallback(() => {
+		dcRef.current?.close();
+		dcRef.current = null;
+		pcRef.current?.close();
+		pcRef.current = null;
 		for (const track of streamRef.current?.getTracks() ?? []) {
 			track.stop();
 		}
 		streamRef.current = null;
-		audioContextRef.current?.close();
-		audioContextRef.current = null;
-	}, []);
-
-	const startAudioCapture = useCallback(async () => {
-		try {
-			const stream = await navigator.mediaDevices.getUserMedia({
-				audio: {
-					sampleRate: 24000,
-					channelCount: 1,
-					echoCancellation: true,
-					noiseSuppression: true,
-				},
-			});
-			streamRef.current = stream;
-			const audioContext = new AudioContext({ sampleRate: 24000 });
-			audioContextRef.current = audioContext;
-			const source = audioContext.createMediaStreamSource(stream);
-			const processor = audioContext.createScriptProcessor(4096, 1, 1);
-			processorRef.current = processor;
-
-			processor.onaudioprocess = (e) => {
-				if (wsRef.current?.readyState !== WebSocket.OPEN) return;
-				const inputData = e.inputBuffer.getChannelData(0);
-				const pcm16 = float32ToPcm16(inputData);
-				const base64 = arrayBufferToBase64(pcm16.buffer);
-				wsRef.current.send(
-					JSON.stringify({ type: "input_audio_buffer.append", audio: base64 }),
-				);
-			};
-
-			source.connect(processor);
-			processor.connect(audioContext.destination);
-		} catch (err) {
-			console.error("Microphone access failed:", err);
-			setError("Microphone access required for voice mode");
+		if (audioElRef.current) {
+			audioElRef.current.srcObject = null;
+			audioElRef.current.remove();
+			audioElRef.current = null;
 		}
 	}, []);
 
 	const connect = useCallback(async () => {
 		try {
 			setError(null);
-			const tokenRes = await fetch("/api/voice", { method: "POST" });
-			if (!tokenRes.ok) {
-				const err = await tokenRes.json();
-				throw new Error(
-					err.detail || err.error || "Failed to create voice session",
-				);
-			}
-			const session = await tokenRes.json();
-			// GA client_secrets returns the ephemeral key at `.value`.
-			const token = session.value ?? session.client_secret?.value;
-			if (!token) throw new Error("No session token received");
 
-			// Discover the WebMCP tools registered on the page so the voice model
-			// can call them.
 			const ctx = document.modelContext as ExecutableModelContext | undefined;
 			toolsRef.current = ctx ? await ctx.getTools() : [];
 
-			const ws = new WebSocket(
-				"wss://api.openai.com/v1/realtime?model=gpt-realtime",
-				["realtime", `openai-insecure-api-key.${token}`],
-			);
-			wsRef.current = ws;
+			const pc = new RTCPeerConnection();
+			pcRef.current = pc;
 
-			ws.onopen = () => {
+			// Appended to DOM so browsers allow autoplay.
+			const audio = document.createElement("audio");
+			audio.autoplay = true;
+			audio.style.display = "none";
+			document.body.appendChild(audio);
+			audioElRef.current = audio;
+			pc.ontrack = (e) => {
+				audio.srcObject = e.streams[0];
+				audio.play().catch((err) => {
+					console.warn("Voice audio autoplay failed:", err);
+				});
+			};
+
+			// Capture mic and send to the peer connection.
+			const stream = await navigator.mediaDevices.getUserMedia({
+				audio: {
+					echoCancellation: true,
+					noiseSuppression: true,
+				},
+			});
+			streamRef.current = stream;
+			pc.addTrack(stream.getTracks()[0]);
+
+			// Data channel for Realtime API events.
+			const dc = pc.createDataChannel("oai-events");
+			dcRef.current = dc;
+
+			dc.onopen = () => {
 				setState((s) => ({ ...s, isConnected: true }));
-				// Register the WebMCP tools with the realtime session so the model
-				// can search, browse, and order by voice.
 				if (toolsRef.current.length > 0) {
-					ws.send(
+					dc.send(
 						JSON.stringify({
 							type: "session.update",
 							session: {
 								type: "realtime",
+								output_modalities: ["audio"],
 								tools: toolsRef.current.map((t) => ({
 									type: "function",
 									name: t.name,
@@ -262,62 +208,100 @@ export function useVoiceAgent() {
 						}),
 					);
 				}
-				startAudioCapture();
+				createAudioResponse(
+					"Greet the user warmly and briefly. Tell them you can help them find food and place an order. Keep it to one or two short sentences.",
+				);
 			};
-			ws.onmessage = (event) => {
-				handleServerEvent(JSON.parse(event.data));
+
+			dc.onmessage = (e) => {
+				handleServerEventRef.current(JSON.parse(e.data));
 			};
-			ws.onerror = () => {
-				setError("Voice connection error");
-				setState((s) => ({ ...s, isConnected: false }));
-			};
-			ws.onclose = () => {
-				setState((s) => ({
-					...s,
+
+			dc.onclose = () => {
+				setState({
 					isConnected: false,
 					isListening: false,
 					isSpeaking: false,
-				}));
-				stopAudioCapture();
+					transcript: "",
+				});
 			};
+
+			pc.oniceconnectionstatechange = () => {
+				if (
+					pc.iceConnectionState === "failed" ||
+					pc.iceConnectionState === "disconnected"
+				) {
+					setError("Voice connection lost");
+					cleanup();
+					setState({
+						isConnected: false,
+						isListening: false,
+						isSpeaking: false,
+						transcript: "",
+					});
+				}
+			};
+
+			// SDP offer/answer exchange via our server proxy.
+			const offer = await pc.createOffer();
+			await pc.setLocalDescription(offer);
+
+			const sdpRes = await fetch("/api/voice", {
+				method: "POST",
+				body: offer.sdp,
+				headers: { "Content-Type": "application/sdp" },
+			});
+
+			if (!sdpRes.ok) {
+				let detail = "Failed to create voice session";
+				try {
+					const err = await sdpRes.json();
+					detail = err.detail || err.error || detail;
+				} catch {
+					// response wasn't JSON
+				}
+				throw new Error(detail);
+			}
+
+			const answerSdp = await sdpRes.text();
+			await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
 		} catch (err) {
+			cleanup();
 			setError(err instanceof Error ? err.message : "Failed to connect voice");
 		}
-	}, [handleServerEvent, startAudioCapture, stopAudioCapture]);
+	}, [cleanup, createAudioResponse]);
 
 	const disconnect = useCallback(() => {
-		wsRef.current?.close();
-		wsRef.current = null;
-		stopAudioCapture();
+		cleanup();
 		setState({
 			isConnected: false,
 			isListening: false,
 			isSpeaking: false,
 			transcript: "",
 		});
-	}, [stopAudioCapture]);
+	}, [cleanup]);
 
-	const sendTextMessage = useCallback((text: string) => {
-		if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-		wsRef.current.send(
-			JSON.stringify({
+	const sendTextMessage = useCallback(
+		(text: string) => {
+			sendEvent({
 				type: "conversation.item.create",
 				item: {
 					type: "message",
 					role: "user",
 					content: [{ type: "input_text", text }],
 				},
-			}),
-		);
-		wsRef.current.send(JSON.stringify({ type: "response.create" }));
-		setMessages((prev) => [...prev, { role: "user", content: text }]);
-	}, []);
+			});
+			createAudioResponse();
+			setMessages((prev) => [...prev, { role: "user", content: text }]);
+		},
+		[createAudioResponse, sendEvent],
+	);
 
 	useEffect(() => {
 		return () => {
-			disconnect();
+			cleanup();
 		};
-	}, [disconnect]);
+	}, [cleanup]);
 
 	return {
 		state,

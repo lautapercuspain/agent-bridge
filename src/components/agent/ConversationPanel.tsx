@@ -10,10 +10,11 @@ const TOOL_LABELS: Record<string, string> = {
 	"get-restaurant-menu": "Fetching menu",
 	"filter-menu-items": "Filtering items",
 	"compare-options": "Comparing options",
-	"add-to-cart": "Adding to cart",
-	"remove-from-cart": "Removing from cart",
-	"get-cart-summary": "Checking your cart",
-	"prepare-order": "Preparing your order",
+	"add-to-cart": "Adding to shortlist",
+	"remove-from-cart": "Removing from shortlist",
+	"get-cart-summary": "Checking your shortlist",
+	"get-delivery-options": "Finding delivery apps",
+	"checkout-on-platform": "Opening your delivery app",
 };
 
 export function ConversationPanel() {
@@ -34,7 +35,11 @@ export function ConversationPanel() {
 		const text = input.trim();
 		if (!text || isThinking) return;
 		setInput("");
-		sendMessage(text);
+		if (voice.state.isConnected) {
+			voice.sendTextMessage(text);
+		} else {
+			sendMessage(text);
+		}
 	}
 
 	function toggleVoice() {

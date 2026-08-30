@@ -57,7 +57,7 @@ export function MenuItemCard({ item, onAdd }: MenuItemCardProps) {
 				type="button"
 				onClick={() => onAdd(item)}
 				className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition-colors hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
-				aria-label={`Add ${item.name} to cart`}
+				aria-label={`Add ${item.name} to shortlist`}
 			>
 				<Plus className="h-4 w-4" />
 			</button>

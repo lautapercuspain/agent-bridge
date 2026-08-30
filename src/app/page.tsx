@@ -1,36 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConversationPanel } from "@/components/agent/ConversationPanel";
 import { CartSidebar } from "@/components/commerce/CartSidebar";
 import { CommercePanel } from "@/components/commerce/CommercePanel";
-import { OrderConfirmation } from "@/components/commerce/OrderConfirmation";
-import { OrderReview } from "@/components/commerce/OrderReview";
 import { useAgentUIStore } from "@/lib/webmcp-tools";
-import type { Order } from "@/types";
+import { useLocationStore } from "@/stores/location-store";
 
 export default function Home() {
 	const [cartOpen, setCartOpen] = useState(false);
-	const [reviewOpen, setReviewOpen] = useState(false);
-	const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
 
-	const orderPrepared = useAgentUIStore((s) => s.orderPrepared);
-	const setOrderPrepared = useAgentUIStore((s) => s.setOrderPrepared);
+	const requestLocation = useLocationStore((s) => s.requestLocation);
 
-	// When the agent calls prepare-order, surface the review modal.
-	if (orderPrepared && !reviewOpen && !confirmedOrder) {
-		setReviewOpen(true);
-		setOrderPrepared(false);
-	}
+	useEffect(() => {
+		requestLocation();
+	}, [requestLocation]);
 
-	function openReview() {
-		setCartOpen(false);
-		setReviewOpen(true);
-	}
+	const checkoutRequested = useAgentUIStore((s) => s.checkoutRequested);
+	const setCheckoutRequested = useAgentUIStore((s) => s.setCheckoutRequested);
 
-	function handleConfirmed(order: Order) {
-		setReviewOpen(false);
-		setConfirmedOrder(order);
+	// When the agent calls checkout-on-platform, open the shortlist so the user
+	// can tap through to their delivery app.
+	if (checkoutRequested && !cartOpen) {
+		setCartOpen(true);
+		setCheckoutRequested(false);
 	}
 
 	return (
@@ -43,22 +36,7 @@ export default function Home() {
 				<CommercePanel onOpenCart={() => setCartOpen(true)} />
 			</div>
 
-			<CartSidebar
-				open={cartOpen}
-				onClose={() => setCartOpen(false)}
-				onCheckout={openReview}
-			/>
-
-			<OrderReview
-				open={reviewOpen}
-				onClose={() => setReviewOpen(false)}
-				onConfirmed={handleConfirmed}
-			/>
-
-			<OrderConfirmation
-				order={confirmedOrder}
-				onClose={() => setConfirmedOrder(null)}
-			/>
+			<CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
 		</div>
 	);
 }

@@ -15,9 +15,6 @@ interface CartState {
 	updateQuantity: (menuItemId: string, quantity: number) => void;
 	clearCart: () => void;
 	getSubtotal: () => number;
-	getTax: () => number;
-	getDeliveryFee: () => number;
-	getTotal: () => number;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -79,8 +76,4 @@ export const useCartStore = create<CartState>((set, get) => ({
 
 	getSubtotal: () =>
 		get().items.reduce((sum, ci) => sum + ci.menuItem.price * ci.quantity, 0),
-
-	getTax: () => get().getSubtotal() * 0.0875,
-	getDeliveryFee: () => (get().items.length > 0 ? 3.99 : 0),
-	getTotal: () => get().getSubtotal() + get().getTax() + get().getDeliveryFee(),
 }));

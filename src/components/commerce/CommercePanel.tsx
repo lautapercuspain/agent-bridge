@@ -1,9 +1,11 @@
 "use client";
 
-import { ArrowLeft, ShoppingCart, Store, UtensilsCrossed } from "lucide-react";
+import { ArrowLeft, ShoppingBag, Store, UtensilsCrossed } from "lucide-react";
 import { useAgentUIStore } from "@/lib/webmcp-tools";
 import { useCartStore } from "@/stores/cart-store";
 import type { MenuItem, Restaurant } from "@/types";
+import { DeliveryPlatformLinks } from "./DeliveryPlatformLinks";
+import { LocationIndicator } from "./LocationIndicator";
 import { MenuItemCard } from "./MenuItemCard";
 import { RestaurantCard } from "./RestaurantCard";
 
@@ -54,7 +56,9 @@ export function CommercePanel({ onOpenCart }: CommercePanelProps) {
 					) : (
 						<div className="flex items-center gap-2">
 							<Store className="h-5 w-5 text-zinc-500" />
-							<h2 className="font-semibold">Discover</h2>
+							<h2 className="font-semibold">Discover</h2>{" "}
+							<span className="mx-1 text-zinc-300 dark:text-zinc-700">|</span>
+							<LocationIndicator />{" "}
 						</div>
 					)}
 				</div>
@@ -64,8 +68,8 @@ export function CommercePanel({ onOpenCart }: CommercePanelProps) {
 					onClick={onOpenCart}
 					className="relative flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-medium shadow-sm ring-1 ring-zinc-200 hover:bg-zinc-50 dark:bg-zinc-900 dark:ring-zinc-800"
 				>
-					<ShoppingCart className="h-4 w-4" />
-					Cart
+					<ShoppingBag className="h-4 w-4" />
+					Shortlist
 					{cartCount > 0 && (
 						<span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-xs font-semibold text-white">
 							{cartCount}
@@ -104,6 +108,19 @@ export function CommercePanel({ onOpenCart }: CommercePanelProps) {
 								{currentRestaurant.rating} stars
 							</p>
 						</div>
+
+						<div className="mb-5 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+							<p className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+								Order from {currentRestaurant.name} in your delivery app
+							</p>
+							<DeliveryPlatformLinks restaurantName={currentRestaurant.name} />
+							<p className="mt-3 text-xs text-zinc-400">
+								Live prices, availability, payment, and delivery are handled in
+								the app you choose. The items below are estimates to help you
+								plan.
+							</p>
+						</div>
+
 						<div className="space-y-2">
 							{currentMenu.map((item) => (
 								<MenuItemCard key={item.id} item={item} onAdd={addMenuItem} />

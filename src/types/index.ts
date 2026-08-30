@@ -41,27 +41,19 @@ export interface CartItem {
 	specialInstructions?: string;
 }
 
-export interface Order {
-	id: string;
-	items: CartItem[];
-	restaurantId: string;
-	restaurantName: string;
-	subtotal: number;
-	tax: number;
-	deliveryFee: number;
-	total: number;
-	status: OrderStatus;
-	createdAt: string;
-	deliveryAddress?: string;
-	estimatedDelivery?: string;
-}
+export type DeliveryPlatform =
+	| "uber-eats"
+	| "rappi"
+	| "pedidosya"
+	| "didi-food";
 
-export type OrderStatus =
-	| "pending_review"
-	| "confirmed"
-	| "preparing"
-	| "delivering"
-	| "delivered";
+export interface DeliveryLink {
+	platform: DeliveryPlatform;
+	label: string;
+	url: string;
+	color: string;
+	textColor: string;
+}
 
 export interface ChatMessage {
 	id: string;
@@ -80,6 +72,8 @@ export interface ToolCallResult {
 export interface SearchRestaurantsParams {
 	cuisine?: string;
 	location?: string;
+	latitude?: number;
+	longitude?: number;
 	priceLevel?: string;
 	sortBy?: "rating" | "distance" | "price";
 	limit?: number;

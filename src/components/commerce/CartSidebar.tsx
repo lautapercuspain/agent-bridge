@@ -1,23 +1,20 @@
 "use client";
 
-import { Minus, Plus, ShoppingCart, Trash2, X } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useCartStore } from "@/stores/cart-store";
+import { DeliveryPlatformLinks } from "./DeliveryPlatformLinks";
 
 interface CartSidebarProps {
 	open: boolean;
 	onClose: () => void;
-	onCheckout: () => void;
 }
 
-export function CartSidebar({ open, onClose, onCheckout }: CartSidebarProps) {
+export function CartSidebar({ open, onClose }: CartSidebarProps) {
 	const items = useCartStore((s) => s.items);
 	const restaurantName = useCartStore((s) => s.restaurantName);
 	const updateQuantity = useCartStore((s) => s.updateQuantity);
 	const removeItem = useCartStore((s) => s.removeItem);
 	const subtotal = useCartStore((s) => s.getSubtotal());
-	const tax = useCartStore((s) => s.getTax());
-	const deliveryFee = useCartStore((s) => s.getDeliveryFee());
-	const total = useCartStore((s) => s.getTotal());
 
 	if (!open) return null;
 
@@ -27,15 +24,15 @@ export function CartSidebar({ open, onClose, onCheckout }: CartSidebarProps) {
 				type="button"
 				className="absolute inset-0 bg-black/40"
 				onClick={onClose}
-				aria-label="Close cart"
+				aria-label="Close shortlist"
 			/>
 
 			<div className="relative w-full max-w-md bg-white shadow-xl dark:bg-zinc-900">
 				<div className="flex h-full flex-col">
 					<div className="flex items-center justify-between border-b border-zinc-200 p-4 dark:border-zinc-800">
 						<div className="flex items-center gap-2">
-							<ShoppingCart className="h-5 w-5" />
-							<h2 className="font-semibold text-lg">Your Order</h2>
+							<ShoppingBag className="h-5 w-5" />
+							<h2 className="font-semibold text-lg">Your Shortlist</h2>
 						</div>
 						<button
 							type="button"
@@ -47,11 +44,12 @@ export function CartSidebar({ open, onClose, onCheckout }: CartSidebarProps) {
 					</div>
 
 					{items.length === 0 ? (
-						<div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-zinc-400">
-							<ShoppingCart className="h-12 w-12" />
-							<p>Your cart is empty</p>
+						<div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-zinc-400">
+							<ShoppingBag className="h-12 w-12" />
+							<p>Your shortlist is empty</p>
 							<p className="text-sm">
-								Ask the agent to help you find something to eat
+								Ask the agent to help you find something to eat, then order it
+								in your delivery app.
 							</p>
 						</div>
 					) : (
@@ -114,32 +112,32 @@ export function CartSidebar({ open, onClose, onCheckout }: CartSidebarProps) {
 							</div>
 
 							<div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-								<div className="space-y-1 text-sm">
-									<div className="flex justify-between">
-										<span className="text-zinc-500">Subtotal</span>
-										<span>${subtotal.toFixed(2)}</span>
-									</div>
-									<div className="flex justify-between">
-										<span className="text-zinc-500">Tax</span>
-										<span>${tax.toFixed(2)}</span>
-									</div>
-									<div className="flex justify-between">
-										<span className="text-zinc-500">Delivery</span>
-										<span>${deliveryFee.toFixed(2)}</span>
-									</div>
-									<div className="flex justify-between border-t border-zinc-200 pt-2 font-semibold dark:border-zinc-700">
-										<span>Total</span>
-										<span>${total.toFixed(2)}</span>
-									</div>
+								<div className="flex justify-between text-sm">
+									<span className="text-zinc-500">Estimated subtotal</span>
+									<span className="font-medium">${subtotal.toFixed(2)}</span>
 								</div>
 
-								<button
-									type="button"
-									onClick={onCheckout}
-									className="mt-4 w-full rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-blue-700"
-								>
-									Review Order
-								</button>
+								{restaurantName && (
+									<div className="mt-4">
+										<p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+											Complete your order
+										</p>
+										<DeliveryPlatformLinks
+											restaurantName={restaurantName}
+											layout="stack"
+											items={items.map((ci) => ({
+												name: ci.menuItem.name,
+												quantity: ci.quantity,
+											}))}
+										/>
+									</div>
+								)}
+
+								<p className="mt-3 text-center text-xs text-zinc-400">
+									Prices are estimates. Use the shortlist as a guide while you
+									add items, then confirm the live total, pay, and arrange
+									delivery in your chosen app.
+								</p>
 							</div>
 						</>
 					)}

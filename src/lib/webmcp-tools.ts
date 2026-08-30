@@ -1,8 +1,10 @@
 "use client";
 
 import { create } from "zustand";
+import { generateDeliveryLinks } from "@/lib/delivery-links";
 import { filterMenuItems, getMenuForRestaurant } from "@/lib/mock-menus";
 import { useCartStore } from "@/stores/cart-store";
+import { useLocationStore } from "@/stores/location-store";
 import type { MenuItem, Restaurant } from "@/types";
 
 // Store for agent-driven UI state updates
@@ -11,12 +13,12 @@ interface AgentUIState {
 	currentMenu: MenuItem[];
 	currentRestaurant: Restaurant | null;
 	comparisonItems: MenuItem[];
-	orderPrepared: boolean;
+	checkoutRequested: boolean;
 
 	setRestaurants: (restaurants: Restaurant[]) => void;
 	setMenu: (restaurant: Restaurant, menu: MenuItem[]) => void;
 	setComparisonItems: (items: MenuItem[]) => void;
-	setOrderPrepared: (prepared: boolean) => void;
+	setCheckoutRequested: (requested: boolean) => void;
 	reset: () => void;
 }
 
@@ -25,20 +27,20 @@ export const useAgentUIStore = create<AgentUIState>((set) => ({
 	currentMenu: [],
 	currentRestaurant: null,
 	comparisonItems: [],
-	orderPrepared: false,
+	checkoutRequested: false,
 
 	setRestaurants: (restaurants) => set({ restaurants }),
 	setMenu: (restaurant, menu) =>
 		set({ currentRestaurant: restaurant, currentMenu: menu }),
 	setComparisonItems: (items) => set({ comparisonItems: items }),
-	setOrderPrepared: (prepared) => set({ orderPrepared: prepared }),
+	setCheckoutRequested: (requested) => set({ checkoutRequested: requested }),
 	reset: () =>
 		set({
 			restaurants: [],
 			currentMenu: [],
 			currentRestaurant: null,
 			comparisonItems: [],
-			orderPrepared: false,
+			checkoutRequested: false,
 		}),
 }));
 
@@ -111,6 +113,18 @@ export function createToolDefinitions() {
 			annotations: { readOnlyHint: true, untrustedContentHint: false },
 			execute: async (input: Record<string, unknown>) => {
 				const agentUI = useAgentUIStore.getState();
+
+				// Inject auto-detected location when the agent doesn't specify one
+				if (!input.location) {
+					const loc = useLocationStore.getState();
+					if (loc.latitude != null && loc.longitude != null) {
+						input.latitude = loc.latitude;
+						input.longitude = loc.longitude;
+					} else if (loc.cityName) {
+						input.location = loc.cityName;
+					}
+				}
+
 				const res = await fetch(
 					`/api/restaurants?${new URLSearchParams(
 						Object.entries(input)
@@ -466,7 +480,7 @@ export function createToolDefinitions() {
 		"get-cart-summary": {
 			name: "get-cart-summary",
 			description:
-				"Get the current cart contents including items, quantities, and total price.",
+				"Get the current shortlist contents including items, quantities, and an estimated subtotal. Prices are planning estimates; the live total is shown in the delivery app at checkout.",
 			inputSchema: {
 				type: "object",
 				properties: {},
@@ -476,9 +490,6 @@ export function createToolDefinitions() {
 				const cart = useCartStore.getState();
 				const items = cart.items;
 				const subtotal = cart.getSubtotal();
-				const tax = cart.getTax();
-				const deliveryFee = cart.getDeliveryFee();
-				const total = cart.getTotal();
 
 				return {
 					content: [
@@ -492,10 +503,8 @@ export function createToolDefinitions() {
 									price: ci.menuItem.price,
 									lineTotal: ci.menuItem.price * ci.quantity,
 								})),
-								subtotal: subtotal.toFixed(2),
-								tax: tax.toFixed(2),
-								deliveryFee: deliveryFee.toFixed(2),
-								total: total.toFixed(2),
+								estimatedSubtotal: subtotal.toFixed(2),
+								note: "Estimated subtotal only. The user completes payment and delivery in their delivery app.",
 							}),
 						},
 					],
@@ -503,39 +512,123 @@ export function createToolDefinitions() {
 			},
 		},
 
-		"prepare-order": {
-			name: "prepare-order",
+		"get-delivery-options": {
+			name: "get-delivery-options",
 			description:
-				"Prepare the current cart as an order for user review. The user must confirm before the order is placed. This shows the order review screen.",
+				"List the delivery apps (Uber Eats, Rappi, PedidosYa, DiDi Food) the user can order from for a restaurant, based on their country. Pass the restaurant id or name.",
 			inputSchema: {
 				type: "object",
 				properties: {
-					deliveryAddress: {
+					restaurantId: {
 						type: "string",
-						description: "Delivery address for the order",
+						description:
+							"The restaurant id or name (defaults to the current restaurant or shortlist restaurant)",
 					},
 				},
 			},
-			annotations: { readOnlyHint: false, untrustedContentHint: false },
-			execute: async () => {
+			annotations: { readOnlyHint: true, untrustedContentHint: false },
+			execute: async (input: { restaurantId?: string }) => {
 				const agentUI = useAgentUIStore.getState();
 				const cart = useCartStore.getState();
-				if (cart.items.length === 0) {
+				const loc = useLocationStore.getState();
+				const restaurantName =
+					(input.restaurantId
+						? resolveRestaurant(input.restaurantId)?.name
+						: undefined) ??
+					agentUI.currentRestaurant?.name ??
+					cart.restaurantName;
+
+				if (!restaurantName) {
 					return {
 						content: [
 							{
 								type: "text",
-								text: "Cart is empty. Add items before preparing an order.",
+								text: JSON.stringify({
+									error: "No restaurant selected yet.",
+									hint: "Search for restaurants or open a menu first, then ask again.",
+								}),
 							},
 						],
 					};
 				}
-				agentUI.setOrderPrepared(true);
+
+				const links = generateDeliveryLinks(restaurantName, loc.countryCode);
 				return {
 					content: [
 						{
 							type: "text",
-							text: `Order prepared for review. ${cart.items.length} items totaling $${cart.getTotal().toFixed(2)}. The user can now review and confirm the order.`,
+							text: JSON.stringify({
+								restaurant: restaurantName,
+								options: links.map((l) => ({ platform: l.label, url: l.url })),
+							}),
+						},
+					],
+				};
+			},
+		},
+
+		"checkout-on-platform": {
+			name: "checkout-on-platform",
+			description:
+				"Hand off to a real delivery app to place the order. Opens the shortlist with the selected items and 'Find on ...' buttons for available delivery apps (Uber Eats, Rappi, PedidosYa, DiDi Food). Uber Eats Order Integration is post-checkout merchant/POS integration, so this app cannot create or prefill a customer's Uber Eats cart. The user adds the items, pays, and arranges delivery there. Optionally pass a platform to open it directly.",
+			inputSchema: {
+				type: "object",
+				properties: {
+					platform: {
+						type: "string",
+						enum: ["uber-eats", "rappi", "pedidosya", "didi-food"],
+						description:
+							"The delivery app to open directly, if the user chose one",
+					},
+				},
+			},
+			annotations: { readOnlyHint: false, untrustedContentHint: false },
+			execute: async (input: { platform?: string }) => {
+				const agentUI = useAgentUIStore.getState();
+				const cart = useCartStore.getState();
+				const loc = useLocationStore.getState();
+				const restaurantName =
+					cart.restaurantName ?? agentUI.currentRestaurant?.name;
+
+				if (!restaurantName) {
+					return {
+						content: [
+							{
+								type: "text",
+								text: "No restaurant selected yet. Search and open a restaurant before checking out.",
+							},
+						],
+					};
+				}
+
+				const links = generateDeliveryLinks(restaurantName, loc.countryCode);
+				agentUI.setCheckoutRequested(true);
+
+				// If the user picked a specific app, open it directly.
+				const chosen = input.platform
+					? links.find((l) => l.platform === input.platform)
+					: undefined;
+				if (chosen && typeof window !== "undefined") {
+					window.open(chosen.url, "_blank", "noopener,noreferrer");
+				}
+
+				return {
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({
+								restaurant: restaurantName,
+								shortlist: cart.items.map((ci) => ({
+									name: ci.menuItem.name,
+									quantity: ci.quantity,
+								})),
+								openedApp: chosen?.label ?? null,
+								availableApps: links.map((l) => l.label),
+								message: chosen
+									? `Opening ${chosen.label} for ${restaurantName}. The shortlist is visible in AgentBridge; the user adds those items, then finishes payment and delivery there.`
+									: `Ready to order from ${restaurantName}. The user can tap a delivery app in the shortlist, add the selected items there, then complete checkout.`,
+								note: "Uber Eats Order Integration starts after checkout for merchant/POS systems, so AgentBridge cannot prefill a customer cart in Uber Eats.",
+							}),
 						},
 					],
 				};
