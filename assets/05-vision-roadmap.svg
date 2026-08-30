@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <radialGradient id="v_orb" cx="0.5" cy="0.35" r="0.5">
+      <stop offset="0%" stop-color="#3b1f8e" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#050505" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="v_orb2" cx="0.8" cy="0.75" r="0.35">
+      <stop offset="0%" stop-color="#0d6e6e" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#050505" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="v_glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.015"/>
+    </linearGradient>
+    <linearGradient id="v_timeline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.3"/>
+    </linearGradient>
+    <filter id="v_noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="800" fill="#050505"/>
+  <rect width="1200" height="800" fill="url(#v_orb)"/>
+  <rect width="1200" height="800" fill="url(#v_orb2)"/>
+  <rect width="1200" height="800" filter="url(#v_noise)" opacity="0.025"/>
+
+  <!-- Title -->
+  <text x="600" y="58" text-anchor="middle" font-family="'SF Pro Display', system-ui, sans-serif" font-size="9" fill="#7c3aed" letter-spacing="0.22em" font-weight="500">ROADMAP</text>
+  <text x="600" y="102" text-anchor="middle" font-family="'SF Pro Display', system-ui, sans-serif" font-size="38" font-weight="600" fill="#f1f5f9" letter-spacing="-0.03em">From food to everything</text>
+  <text x="600" y="135" text-anchor="middle" font-family="'SF Pro Text', system-ui, sans-serif" font-size="15" fill="#64748b" font-weight="300">Building universal commerce infrastructure for AI agents</text>
+
+  <!-- Timeline -->
+  <g transform="translate(600, 210)">
+    <line x1="-380" y1="0" x2="380" y2="0" stroke="url(#v_timeline)" stroke-width="1" opacity="0.4"/>
+    <!-- Phase dots -->
+    <circle cx="-280" cy="0" r="6" fill="#7c3aed" opacity="0.8"/>
+    <circle cx="-280" cy="0" r="10" fill="none" stroke="#7c3aed" stroke-width="0.5" opacity="0.3"/>
+    <circle cx="-90" cy="0" r="4" fill="#a78bfa" opacity="0.5"/>
+    <circle cx="100" cy="0" r="4" fill="#06b6d4" opacity="0.4"/>
+    <circle cx="290" cy="0" r="4" fill="#06b6d4" opacity="0.3"/>
+    <circle cx="290" cy="0" r="8" fill="none" stroke="#06b6d4" stroke-width="0.4" opacity="0.2"/>
+
+    <!-- Phase labels -->
+    <text x="-280" y="-22" text-anchor="middle" font-family="'SF Pro Text', system-ui, sans-serif" font-size="9" fill="#a78bfa" letter-spacing="0.15em" font-weight="500">NOW</text>
+    <text x="-90" y="-22" text-anchor="middle" font-family="'SF Pro Text', system-ui, sans-serif" font-size="9" fill="#64748b" letter-spacing="0.1em" font-weight="400">NEXT</text>
+    <text x="100" y="-22" text-anchor="middle" font-family="'SF Pro Text', system-ui, sans-serif" font-size="9" fill="#64748b" letter-spacing="0.1em" font-weight="400">FUTURE</text>
+    <text x="290" y="-22" text-anchor="middle" font-family="'SF Pro Text', system-ui, sans-serif" font-size="9" fill="#64748b" letter-spacing="0.1em" font-weight="400">VISION</text>
+  </g>
+
+  <!-- Cards row -->
+  <g transform="translate(0, 260)">
+    <!-- Card 1: Food (Active) -->
+    <g transform="translate(68, 0)">
+      <rect width="240" height="280" rx="24" fill="#0a0a14" stroke="#7c3aed" stroke-width="0.6" stroke-opacity="0.25"/>
+      <rect x="5" y="5" width="230" height="270" rx="19" fill="url(#v_glass)"/>
+
+      <!-- Live badge -->
+      <g transform="translate(24, 24)">
+        <rect width="48" height="18" rx="9" fill="#22c55e" fill-opacity="0.1" stroke="#22c55e" stroke-width="0.4" stroke-opacity="0.3"/>
+        <circle cx="12" cy="9" r="3" fill="#22c55e" opacity="0.6"/>
+        <text x="22" y="13" font-family="'SF Pro Text', system-ui, sans-serif" font-size="8" fill="#4ade80" font-weight="500">LIVE</text>
+      </g>
+
+      <!-- Waveform icon representing food/voice -->
+      <g transform="translate(24, 70)" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="butt" opacity="0.5">
+        <line x1="0" y1="-8" x2="0" y2="8"/>
+        <line x1="10" y1="-16" x2="10" y2="16"/>
+        <line x1="20" y1="-12" x2="20" y2="12"/>
+        <line x1="30" y1="-20" x2="30" y2="20"/>
+        <line x1="40" y1="-6" x2="40" y2="6"/>
+      </g>
+
+      <text x="24" y="120" font-family="'SF Pro Display', system-ui, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Food</text>
+      <text x="24" y="120" font-family="'SF Pro Display', system-ui, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Food</text>
+      <text x="24" y="140" font-family="'SF Pro Display', system-ui, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Ordering</text>
+
+      <g transform="translate(24, 170)" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#94a3b8" font-weight="300">
+        <text>Restaurants</text>
+        <text y="22">Meal discovery</text>
+        <text y="44">Price comparison</text>
+        <text y="66">Order + delivery</text>
+      </g>
+    </g>
+
+    <!-- Card 2: Groceries + Retail -->
+    <g transform="translate(338, 0)">
+      <rect width="240" height="280" rx="24" fill="#0a0a14" stroke="#ffffff" stroke-width="0.35" stroke-opacity="0.06"/>
+      <rect x="5" y="5" width="230" height="270" rx="19" fill="url(#v_glass)"/>
+
+      <g transform="translate(24, 65)" stroke="#a78bfa" stroke-width="1.5" fill="none" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.4">
+        <rect x="0" y="0" width="20" height="24" rx="2"/>
+        <rect x="26" y="4" width="20" height="20" rx="2"/>
+        <line x1="5" y1="10" x2="15" y2="10"/>
+        <line x1="5" y1="16" x2="12" y2="16"/>
+      </g>
+
+      <text x="24" y="120" font-family="'SF Pro Display', system-ui, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Groceries</text>
+      <text x="24" y="140" font-family="'SF Pro Display', system-ui, sans-serif" font-size="20" font-weight="600" fill="#94a3b8">+ Retail</text>
+
+      <g transform="translate(24, 170)" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#64748b" font-weight="300">
+        <text>Grocery stores</text>
+        <text y="22">Product catalogs</text>
+        <text y="44">Shopping lists</text>
+        <text y="66">Multi-store orders</text>
+      </g>
+    </g>
+
+    <!-- Card 3: Travel + Services -->
+    <g transform="translate(608, 0)">
+      <rect width="240" height="280" rx="24" fill="#0a0a14" stroke="#ffffff" stroke-width="0.35" stroke-opacity="0.06"/>
+      <rect x="5" y="5" width="230" height="270" rx="19" fill="url(#v_glass)"/>
+
+      <g transform="translate(24, 65)" stroke="#06b6d4" stroke-width="1.5" fill="none" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.35">
+        <path d="M0 20 L12 0 L24 14 L36 4 L48 12"/>
+        <path d="M44 8 L48 4 L48 12" stroke-linejoin="miter"/>
+      </g>
+
+      <text x="24" y="120" font-family="'SF Pro Display', system-ui, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Travel</text>
+      <text x="24" y="140" font-family="'SF Pro Display', system-ui, sans-serif" font-size="20" font-weight="600" fill="#94a3b8">+ Services</text>
+
+      <g transform="translate(24, 170)" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#64748b" font-weight="300">
+        <text>Flight booking</text>
+        <text y="22">Hotel reservations</text>
+        <text y="44">Local services</text>
+        <text y="66">Experience booking</text>
+      </g>
+    </g>
+
+    <!-- Card 4: Universal -->
+    <g transform="translate(878, 0)">
+      <rect width="240" height="280" rx="24" fill="#0a0a14" stroke="#06b6d4" stroke-width="0.4" stroke-opacity="0.12"/>
+      <rect x="5" y="5" width="230" height="270" rx="19" fill="url(#v_glass)"/>
+
+      <!-- Expanding circles icon -->
+      <g transform="translate(44, 78)" fill="none" opacity="0.3">
+        <circle cx="0" cy="0" r="6" stroke="#06b6d4" stroke-width="1"/>
+        <circle cx="0" cy="0" r="14" stroke="#06b6d4" stroke-width="0.8"/>
+        <circle cx="0" cy="0" r="22" stroke="#06b6d4" stroke-width="0.5"/>
+      </g>
+
+      <text x="24" y="120" font-family="'SF Pro Display', system-ui, sans-serif" font-size="20" font-weight="600" fill="#f1f5f9">Universal</text>
+      <text x="24" y="140" font-family="'SF Pro Display', system-ui, sans-serif" font-size="20" font-weight="600" fill="#67e8f9">Commerce</text>
+
+      <g transform="translate(24, 170)" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#64748b" font-weight="300">
+        <text>Any category</text>
+        <text y="22">Any store connected</text>
+        <text y="44">Any AI agent</text>
+        <text y="66">Open infrastructure</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Bottom vision statement -->
+  <g transform="translate(600, 640)">
+    <!-- Glass container -->
+    <rect x="-400" y="-28" width="800" height="66" rx="20" fill="#0a0a14" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.05"/>
+    <rect x="-394" y="-22" width="788" height="54" rx="16" fill="url(#v_glass)"/>
+    <text x="0" y="0" text-anchor="middle" font-family="'SF Pro Display', system-ui, sans-serif" font-size="16" fill="#f1f5f9" font-weight="400">Humans describe what they want.</text>
+    <text x="0" y="24" text-anchor="middle" font-family="'SF Pro Display', system-ui, sans-serif" font-size="16" fill="#a78bfa" font-weight="400">AI agents safely discover and interact with the services that provide it.</text>
+  </g>
+
+  <!-- Bottom mark -->
+  <text x="600" y="755" text-anchor="middle" font-family="'SF Pro Text', system-ui, sans-serif" font-size="9" fill="#374151" font-weight="300" letter-spacing="0.18em">AGENTBRIDGE  /  WEBMCP HACKATHON 2026</text>
+</svg>

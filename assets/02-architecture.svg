@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <radialGradient id="a_orb1" cx="0.2" cy="0.3" r="0.5">
+      <stop offset="0%" stop-color="#3b1f8e" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#050505" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="a_orb2" cx="0.85" cy="0.7" r="0.4">
+      <stop offset="0%" stop-color="#0d6e6e" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#050505" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="a_glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02"/>
+    </linearGradient>
+    <linearGradient id="a_accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="a_noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <filter id="a_blur">
+      <feGaussianBlur stdDeviation="1.5"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="800" fill="#050505"/>
+  <rect width="1200" height="800" fill="url(#a_orb1)"/>
+  <rect width="1200" height="800" fill="url(#a_orb2)"/>
+  <rect width="1200" height="800" filter="url(#a_noise)" opacity="0.025"/>
+
+  <!-- Eyebrow -->
+  <text x="600" y="68" text-anchor="middle" font-family="'SF Pro Display', system-ui, sans-serif" font-size="9" fill="#7c3aed" letter-spacing="0.22em" font-weight="500">HOW IT WORKS</text>
+
+  <!-- Title -->
+  <text x="600" y="110" text-anchor="middle" font-family="'SF Pro Display', system-ui, sans-serif" font-size="38" font-weight="600" fill="#f1f5f9" letter-spacing="-0.03em">Three layers. One seamless experience.</text>
+
+  <!-- Three glass cards — asymmetric bento -->
+
+  <!-- Card 1: Voice AI Agent (tall left) -->
+  <g transform="translate(118, 170)">
+    <!-- Outer shell -->
+    <rect width="340" height="460" rx="28" fill="#0a0a14" stroke="#ffffff" stroke-width="0.4" stroke-opacity="0.06"/>
+    <!-- Inner core -->
+    <rect x="6" y="6" width="328" height="448" rx="22" fill="url(#a_glass)"/>
+    <!-- Icon: audio waveform — minimal, elegant -->
+    <g transform="translate(40, 50)">
+      <g stroke="#7c3aed" stroke-width="1.8" stroke-linecap="butt" opacity="0.7">
+        <line x1="0" y1="-14" x2="0" y2="14"/>
+        <line x1="10" y1="-22" x2="10" y2="22"/>
+        <line x1="20" y1="-30" x2="20" y2="30"/>
+        <line x1="30" y1="-20" x2="30" y2="20"/>
+        <line x1="40" y1="-10" x2="40" y2="10"/>
+      </g>
+    </g>
+    <!-- Label -->
+    <text x="40" y="120" font-family="'SF Pro Display', system-ui, sans-serif" font-size="22" font-weight="600" fill="#f1f5f9" letter-spacing="-0.02em">Voice AI Agent</text>
+    <text x="40" y="148" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#64748b" font-weight="300">Natural conversation interface</text>
+
+    <!-- Feature list -->
+    <g transform="translate(40, 195)" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#94a3b8" font-weight="300">
+      <g>
+        <circle cx="4" cy="-3" r="2" fill="#7c3aed" opacity="0.6"/>
+        <text x="16" y="0">Understands natural requests</text>
+      </g>
+      <g transform="translate(0, 32)">
+        <circle cx="4" cy="-3" r="2" fill="#7c3aed" opacity="0.6"/>
+        <text x="16" y="0">Asks clarifying questions</text>
+      </g>
+      <g transform="translate(0, 64)">
+        <circle cx="4" cy="-3" r="2" fill="#7c3aed" opacity="0.6"/>
+        <text x="16" y="0">Gathers preferences + budget</text>
+      </g>
+      <g transform="translate(0, 96)">
+        <circle cx="4" cy="-3" r="2" fill="#7c3aed" opacity="0.6"/>
+        <text x="16" y="0">Presents options for approval</text>
+      </g>
+    </g>
+
+    <!-- Mini chat preview -->
+    <g transform="translate(40, 345)">
+      <rect width="260" height="70" rx="12" fill="#0f0f1a" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.05"/>
+      <text x="16" y="24" font-family="'SF Pro Text', system-ui, sans-serif" font-size="11" fill="#64748b" font-style="italic">"Get me lunch."</text>
+      <text x="16" y="48" font-family="'SF Pro Text', system-ui, sans-serif" font-size="11" fill="#a78bfa">"What type of food would you like?"</text>
+    </g>
+  </g>
+
+  <!-- Card 2: AgentBridge (main, center-right) -->
+  <g transform="translate(484, 170)">
+    <!-- Outer shell — accented border -->
+    <rect width="340" height="290" rx="28" fill="#0a0a14" stroke="#7c3aed" stroke-width="0.6" stroke-opacity="0.2"/>
+    <!-- Inner core -->
+    <rect x="6" y="6" width="328" height="278" rx="22" fill="url(#a_glass)"/>
+    <!-- Icon: bridge abstraction -->
+    <g transform="translate(40, 48)" stroke="url(#a_accent)" stroke-width="1.8" fill="none" stroke-linecap="butt" stroke-linejoin="miter" opacity="0.7">
+      <path d="M0 18 Q20 -12 40 -12 Q60 -12 80 18"/>
+      <line x1="-8" y1="18" x2="88" y2="18"/>
+    </g>
+    <text x="40" y="112" font-family="'SF Pro Display', system-ui, sans-serif" font-size="22" font-weight="600" fill="#f1f5f9" letter-spacing="-0.02em">AgentBridge</text>
+    <text x="40" y="140" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#64748b" font-weight="300">Commerce abstraction layer</text>
+
+    <g transform="translate(40, 180)" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#94a3b8" font-weight="300">
+      <g>
+        <circle cx="4" cy="-3" r="2" fill="#06b6d4" opacity="0.6"/>
+        <text x="16" y="0">Connects to any online store</text>
+      </g>
+      <g transform="translate(0, 32)">
+        <circle cx="4" cy="-3" r="2" fill="#06b6d4" opacity="0.6"/>
+        <text x="16" y="0">Exposes structured capabilities</text>
+      </g>
+      <g transform="translate(0, 64)">
+        <circle cx="4" cy="-3" r="2" fill="#06b6d4" opacity="0.6"/>
+        <text x="16" y="0">Handles commerce complexity</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Card 3: MCP + Stores (stacked right, shorter) -->
+  <g transform="translate(484, 484)">
+    <!-- Outer shell -->
+    <rect width="340" height="146" rx="28" fill="#0a0a14" stroke="#ffffff" stroke-width="0.4" stroke-opacity="0.06"/>
+    <rect x="6" y="6" width="328" height="134" rx="22" fill="url(#a_glass)"/>
+    <!-- Code-like content -->
+    <g transform="translate(32, 36)" font-family="'SF Mono', 'Geist Mono', monospace" font-size="11.5">
+      <text fill="#7c3aed">search_meals<tspan fill="#475569">(query, budget)</tspan></text>
+      <text y="22" fill="#06b6d4">compare_prices<tspan fill="#475569">(items[])</tspan></text>
+      <text y="44" fill="#7c3aed">create_order<tspan fill="#475569">(selection, addr)</tspan></text>
+      <text y="66" fill="#06b6d4">check_availability<tspan fill="#475569">(store)</tspan></text>
+    </g>
+    <!-- Label -->
+    <text x="308" y="124" text-anchor="end" font-family="'SF Pro Text', system-ui, sans-serif" font-size="9" fill="#4b5563" letter-spacing="0.15em" font-weight="400">MCP CAPABILITIES</text>
+  </g>
+
+  <!-- Card 4: Online stores (far right, narrow) -->
+  <g transform="translate(850, 170)">
+    <rect width="230" height="460" rx="28" fill="#0a0a14" stroke="#ffffff" stroke-width="0.4" stroke-opacity="0.06"/>
+    <rect x="6" y="6" width="218" height="448" rx="22" fill="url(#a_glass)"/>
+
+    <text x="32" y="50" font-family="'SF Pro Display', system-ui, sans-serif" font-size="18" font-weight="600" fill="#f1f5f9" letter-spacing="-0.01em">Connected</text>
+    <text x="32" y="70" font-family="'SF Pro Display', system-ui, sans-serif" font-size="18" font-weight="600" fill="#f1f5f9" letter-spacing="-0.01em">Stores</text>
+
+    <!-- Store items — glass pills -->
+    <g transform="translate(32, 105)" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#94a3b8" font-weight="300">
+      <g>
+        <rect width="166" height="44" rx="12" fill="#0f0f1a" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.04"/>
+        <circle cx="22" cy="22" r="10" fill="#7c3aed" opacity="0.15"/>
+        <text x="22" y="26" text-anchor="middle" font-size="11" fill="#a78bfa">R</text>
+        <text x="44" y="26">Restaurants</text>
+        <circle cx="148" cy="22" r="3" fill="#22c55e" opacity="0.5"/>
+      </g>
+      <g transform="translate(0, 56)">
+        <rect width="166" height="44" rx="12" fill="#0f0f1a" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.04"/>
+        <circle cx="22" cy="22" r="10" fill="#06b6d4" opacity="0.15"/>
+        <text x="22" y="26" text-anchor="middle" font-size="11" fill="#67e8f9">G</text>
+        <text x="44" y="26">Groceries</text>
+        <circle cx="148" cy="22" r="3" fill="#475569" opacity="0.4"/>
+      </g>
+      <g transform="translate(0, 112)">
+        <rect width="166" height="44" rx="12" fill="#0f0f1a" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.04"/>
+        <circle cx="22" cy="22" r="10" fill="#a78bfa" opacity="0.15"/>
+        <text x="22" y="26" text-anchor="middle" font-size="11" fill="#c4b5fd">S</text>
+        <text x="44" y="26">Retail Shops</text>
+        <circle cx="148" cy="22" r="3" fill="#475569" opacity="0.4"/>
+      </g>
+      <g transform="translate(0, 168)">
+        <rect width="166" height="44" rx="12" fill="#0f0f1a" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.04"/>
+        <circle cx="22" cy="22" r="10" fill="#06b6d4" opacity="0.15"/>
+        <text x="22" y="26" text-anchor="middle" font-size="11" fill="#67e8f9">T</text>
+        <text x="44" y="26">Travel</text>
+        <circle cx="148" cy="22" r="3" fill="#475569" opacity="0.4"/>
+      </g>
+      <g transform="translate(0, 224)">
+        <rect width="166" height="44" rx="12" fill="#0f0f1a" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.04"/>
+        <circle cx="22" cy="22" r="10" fill="#7c3aed" opacity="0.1"/>
+        <text x="22" y="26" text-anchor="middle" font-size="11" fill="#a78bfa">+</text>
+        <text x="44" y="26">More coming</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Floating connection lines between cards -->
+  <g stroke="#7c3aed" stroke-width="0.5" stroke-opacity="0.15" stroke-dasharray="4 6">
+    <line x1="458" y1="350" x2="484" y2="350"/>
+    <line x1="824" y1="350" x2="850" y2="350"/>
+  </g>
+
+  <!-- Bottom text -->
+  <text x="600" y="680" text-anchor="middle" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#475569" font-weight="300">The human provides intent. The agent reasons. AgentBridge provides access. Stores provide products.</text>
+</svg>

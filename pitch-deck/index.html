@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentBridge — Pitch Deck</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a1a;
+    --bg-card: #111128;
+    --bg-surface: #1e1e3a;
+    --purple: #6366f1;
+    --purple-light: #8b5cf6;
+    --purple-glow: #a5b4fc;
+    --text: #e0e7ff;
+    --text-muted: #94a3b8;
+    --text-dim: #6b7280;
+    --green: #22c55e;
+    --red: #ef4444;
+  }
+
+  html { font-size: 16px; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .slide {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 100px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, rgba(99,102,241,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .slide-number {
+    position: absolute;
+    bottom: 30px;
+    right: 40px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    color: var(--purple-glow);
+    font-weight: 400;
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  .tagline {
+    font-size: 1rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 20px;
+    background: var(--bg-surface);
+    border: 1px solid var(--text-dim);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 32px;
+  }
+
+  .quote {
+    font-size: 2rem;
+    font-style: italic;
+    color: var(--text);
+    text-align: center;
+    max-width: 700px;
+    line-height: 1.4;
+    position: relative;
+    padding: 0 40px;
+  }
+
+  .quote::before, .quote::after {
+    color: var(--purple);
+    font-size: 3rem;
+    font-style: normal;
+    position: absolute;
+  }
+
+  .quote::before { content: '\201C'; left: 0; top: -10px; }
+  .quote::after { content: '\201D'; right: 0; bottom: -30px; }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    width: 100%;
+    max-width: 1100px;
+    margin-top: 48px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 36px 28px;
+    border: 1px solid rgba(99,102,241,0.2);
+  }
+
+  .card h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--purple-glow);
+  }
+
+  .card p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .card .icon {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+    display: block;
+    color: var(--purple);
+  }
+
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 48px;
+  }
+
+  .flow-node {
+    padding: 16px 28px;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    background: var(--bg-card);
+    border: 1px solid var(--text-dim);
+  }
+
+  .flow-node.active {
+    background: linear-gradient(135deg, var(--purple), var(--purple-light));
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .flow-arrow {
+    color: var(--text-dim);
+    font-size: 1.2rem;
+  }
+
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 40px;
+  }
+
+  .comparison .side { text-align: left; }
+
+  .comparison .side h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+
+  .comparison .side.bad h3 { color: var(--red); }
+  .comparison .side.good h3 { color: var(--green); }
+
+  .comparison .side ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .comparison .side ul li {
+    font-size: 1rem;
+    color: var(--text-muted);
+    padding-left: 24px;
+    position: relative;
+  }
+
+  .comparison .side.bad ul li::before {
+    content: '\2717';
+    position: absolute;
+    left: 0;
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  .comparison .side.good ul li::before {
+    content: '\2713';
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .roadmap {
+    display: flex;
+    gap: 24px;
+    margin-top: 48px;
+    width: 100%;
+    max-width: 1000px;
+  }
+
+  .roadmap-item {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 28px 20px;
+    text-align: center;
+    border: 1px solid rgba(99,102,241,0.15);
+  }
+
+  .roadmap-item.now {
+    border-color: var(--purple);
+    box-shadow: 0 0 24px rgba(99,102,241,0.15);
+  }
+
+  .roadmap-item .phase {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--purple);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .roadmap-item h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .roadmap-item p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .final-statement {
+    font-size: 1.6rem;
+    font-weight: 500;
+    text-align: center;
+    max-width: 800px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .final-statement strong {
+    color: var(--purple-glow);
+    font-weight: 700;
+  }
+
+  .separator {
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--purple), var(--purple-light));
+    border-radius: 2px;
+    margin: 24px 0;
+  }
+
+  @media print {
+    .slide { page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1: Title -->
+<section class="slide">
+  <h1>AgentBridge</h1>
+  <p class="subtitle">Agent-Native Commerce Platform</p>
+  <p class="tagline">Bridging AI agents and online stores through structured MCP capabilities</p>
+  <span class="badge">Built for WebMCP Hackathon</span>
+  <span class="slide-number">1</span>
+</section>
+
+<!-- SLIDE 2: The Problem -->
+<section class="slide">
+  <h2>The Problem</h2>
+  <div class="separator"></div>
+  <p class="quote">Online shopping was designed for humans. AI agents are stuck pretending to be one.</p>
+  <div class="comparison">
+    <div class="side bad">
+      <h3>Today's Reality</h3>
+      <ul>
+        <li>Agents rely on brittle browser automation</li>
+        <li>Visual interfaces break unpredictably</li>
+        <li>Custom integrations for each store</li>
+        <li>No semantic understanding of commerce</li>
+      </ul>
+    </div>
+    <div class="side good">
+      <h3>What Agents Need</h3>
+      <ul>
+        <li>Structured, discoverable capabilities</li>
+        <li>Reliable, predictable interactions</li>
+        <li>Universal commerce interface</li>
+        <li>Semantic actions, not pixel hunting</li>
+      </ul>
+    </div>
+  </div>
+  <span class="slide-number">2</span>
+</section>
+
+<!-- SLIDE 3: The Inspiration -->
+<section class="slide">
+  <h2>One Simple Request</h2>
+  <div class="separator"></div>
+  <p class="quote">Hey Agent, please get me lunch.</p>
+  <p class="tagline" style="margin-top: 40px; max-width: 600px; line-height: 1.7;">
+    That simple request involves many decisions: what kind of food, budget, dietary preferences, delivery or pickup. The agent should handle the complexity while the human provides intent.
+  </p>
+  <span class="slide-number">3</span>
+</section>
+
+<!-- SLIDE 4: How It Works -->
+<section class="slide">
+  <h2>How It Works</h2>
+  <div class="separator"></div>
+  <div class="flow">
+    <div class="flow-node">Human</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-node">Voice AI Agent</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-node active">AgentBridge</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-node">MCP Layer</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-node">Online Stores</div>
+  </div>
+  <div class="grid-3">
+    <div class="card">
+      <span class="icon">//</span>
+      <h3>Voice AI Agent</h3>
+      <p>Natural conversation with the user. Understands intent, asks follow-up questions, and gathers preferences conversationally.</p>
+    </div>
+    <div class="card">
+      <span class="icon">&lt;&gt;</span>
+      <h3>AgentBridge Platform</h3>
+      <p>The bridge between agents and stores. Abstracts commerce complexity and exposes structured capabilities via MCP.</p>
+    </div>
+    <div class="card">
+      <span class="icon">{}</span>
+      <h3>MCP Layer</h3>
+      <p>Structured, discoverable tools: search meals, filter by preferences, compare prices, create orders.</p>
+    </div>
+  </div>
+  <span class="slide-number">4</span>
+</section>
+
+<!-- SLIDE 5: Why MCP Matters -->
+<section class="slide">
+  <h2>Why WebMCP Matters</h2>
+  <div class="separator"></div>
+  <p class="tagline" style="max-width: 700px; line-height: 1.7; margin-bottom: 32px;">
+    The web needs to become agent-friendly. Instead of navigating visual interfaces, agents interact through meaningful, semantic capabilities.
+  </p>
+  <div class="comparison">
+    <div class="side bad">
+      <h3>Browser Automation</h3>
+      <ul>
+        <li>Click "Search" button</li>
+        <li>Type into input field #search-box</li>
+        <li>Wait for DOM update</li>
+        <li>Parse HTML for product cards</li>
+        <li>Extract price from span.price</li>
+      </ul>
+    </div>
+    <div class="side good">
+      <h3>AgentBridge + MCP</h3>
+      <ul>
+        <li>search_meals("poke bowl")</li>
+        <li>filter_products(budget: 20)</li>
+        <li>compare_prices(items)</li>
+        <li>check_availability(store, item)</li>
+        <li>create_order(items, address)</li>
+      </ul>
+    </div>
+  </div>
+  <span class="slide-number">5</span>
+</section>
+
+<!-- SLIDE 6: Key Challenges -->
+<section class="slide">
+  <h2>Challenges We Solved</h2>
+  <div class="separator"></div>
+  <div class="grid-3">
+    <div class="card">
+      <h3>Natural Language to Commerce</h3>
+      <p>"Get me lunch" has missing info. The agent must determine what's unknown and ask the right questions without feeling robotic.</p>
+    </div>
+    <div class="card">
+      <h3>Autonomy vs. Control</h3>
+      <p>Shopping involves money and preferences. The agent handles complexity but keeps the human in the loop for important decisions.</p>
+    </div>
+    <div class="card">
+      <h3>Commerce Abstraction</h3>
+      <p>Different stores expose different APIs. AgentBridge creates a consistent, structured interface for any AI agent to use.</p>
+    </div>
+  </div>
+  <span class="slide-number">6</span>
+</section>
+
+<!-- SLIDE 7: What We Learned -->
+<section class="slide">
+  <h2>What We Learned</h2>
+  <div class="separator"></div>
+  <div class="grid-3">
+    <div class="card">
+      <h3>Agents Need Infrastructure</h3>
+      <p>Intelligence alone isn't enough. Agents need reliable, structured ways to interact with the digital world.</p>
+    </div>
+    <div class="card">
+      <h3>Conversation Simplifies</h3>
+      <p>Conversational AI can dramatically simplify complex workflows. Users describe what they want; the agent handles the how.</p>
+    </div>
+    <div class="card">
+      <h3>Trust Is Essential</h3>
+      <p>The best experience isn't replacing the human. It's augmenting them: human intent + agent execution.</p>
+    </div>
+  </div>
+  <span class="slide-number">7</span>
+</section>
+
+<!-- SLIDE 8: Roadmap -->
+<section class="slide">
+  <h2>What's Next</h2>
+  <div class="separator"></div>
+  <div class="roadmap">
+    <div class="roadmap-item now">
+      <div class="phase">Now</div>
+      <h4>Food Ordering</h4>
+      <p>Restaurants, meals, and delivery through voice-first agent interaction.</p>
+    </div>
+    <div class="roadmap-item">
+      <div class="phase">Phase 2</div>
+      <h4>Groceries + Retail</h4>
+      <p>Expand to grocery stores and retail products.</p>
+    </div>
+    <div class="roadmap-item">
+      <div class="phase">Phase 3</div>
+      <h4>Travel + Services</h4>
+      <p>Travel booking, local services, and reservations.</p>
+    </div>
+    <div class="roadmap-item">
+      <div class="phase">Vision</div>
+      <h4>Universal Commerce</h4>
+      <p>Any category, any store. Full agent-native commerce infrastructure.</p>
+    </div>
+  </div>
+  <span class="slide-number">8</span>
+</section>
+
+<!-- SLIDE 9: Closing -->
+<section class="slide">
+  <h1>AgentBridge</h1>
+  <div class="separator"></div>
+  <p class="final-statement">
+    <strong>Humans</strong> describe what they want.<br>
+    <strong>AI agents</strong> safely discover and interact with the services that provide it.
+  </p>
+  <p class="tagline" style="margin-top: 40px;">Making online commerce ready for AI agents.</p>
+  <span class="badge">Built for WebMCP Hackathon</span>
+  <span class="slide-number">9</span>
+</section>
+
+</body>
+</html>

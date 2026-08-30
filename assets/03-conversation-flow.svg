@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <radialGradient id="c_orb" cx="0.5" cy="0.4" r="0.5">
+      <stop offset="0%" stop-color="#3b1f8e" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#050505" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="c_glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.015"/>
+    </linearGradient>
+    <filter id="c_noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <clipPath id="phoneClip">
+      <rect x="0" y="0" width="360" height="700" rx="36"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="800" fill="#050505"/>
+  <rect width="1200" height="800" fill="url(#c_orb)"/>
+  <rect width="1200" height="800" filter="url(#c_noise)" opacity="0.025"/>
+
+  <!-- Left side: Context text -->
+  <g transform="translate(120, 160)">
+    <text font-family="'SF Pro Display', system-ui, sans-serif" font-size="9" fill="#7c3aed" letter-spacing="0.22em" font-weight="500">THE EXPERIENCE</text>
+    <text y="50" font-family="'SF Pro Display', system-ui, sans-serif" font-size="44" font-weight="600" fill="#f1f5f9" letter-spacing="-0.03em">Just say</text>
+    <text y="100" font-family="'SF Pro Display', system-ui, sans-serif" font-size="44" font-weight="600" fill="#f1f5f9" letter-spacing="-0.03em">what you</text>
+    <text y="150" font-family="'SF Pro Display', system-ui, sans-serif" font-size="44" font-weight="600" fill="#c4b5fd" letter-spacing="-0.03em">want.</text>
+
+    <text y="210" font-family="'SF Pro Text', system-ui, sans-serif" font-size="14" fill="#64748b" font-weight="300" letter-spacing="0.01em">The agent handles the rest.</text>
+    <text y="232" font-family="'SF Pro Text', system-ui, sans-serif" font-size="14" fill="#64748b" font-weight="300" letter-spacing="0.01em">No apps. No browsing. No forms.</text>
+
+    <!-- Step indicators -->
+    <g transform="translate(0, 300)" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" font-weight="300">
+      <g>
+        <rect width="24" height="24" rx="6" fill="#7c3aed" fill-opacity="0.12" stroke="#7c3aed" stroke-width="0.5" stroke-opacity="0.3"/>
+        <text x="12" y="16" text-anchor="middle" fill="#a78bfa" font-size="10" font-weight="500">1</text>
+        <text x="36" y="16" fill="#94a3b8">You describe your intent</text>
+      </g>
+      <g transform="translate(0, 44)">
+        <rect width="24" height="24" rx="6" fill="#7c3aed" fill-opacity="0.08" stroke="#7c3aed" stroke-width="0.5" stroke-opacity="0.2"/>
+        <text x="12" y="16" text-anchor="middle" fill="#a78bfa" font-size="10" font-weight="500">2</text>
+        <text x="36" y="16" fill="#94a3b8">Agent clarifies details</text>
+      </g>
+      <g transform="translate(0, 88)">
+        <rect width="24" height="24" rx="6" fill="#06b6d4" fill-opacity="0.08" stroke="#06b6d4" stroke-width="0.5" stroke-opacity="0.2"/>
+        <text x="12" y="16" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="500">3</text>
+        <text x="36" y="16" fill="#94a3b8">Discovers options via MCP</text>
+      </g>
+      <g transform="translate(0, 132)">
+        <rect width="24" height="24" rx="6" fill="#22c55e" fill-opacity="0.08" stroke="#22c55e" stroke-width="0.5" stroke-opacity="0.2"/>
+        <text x="12" y="16" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="500">4</text>
+        <text x="36" y="16" fill="#94a3b8">You approve, agent orders</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right side: Phone mockup with chat -->
+  <g transform="translate(660, 50)">
+    <!-- Phone outer shell -->
+    <rect x="-8" y="-8" width="376" height="716" rx="44" fill="#0a0a14" stroke="#ffffff" stroke-width="0.4" stroke-opacity="0.06"/>
+    <!-- Phone inner body -->
+    <rect width="360" height="700" rx="36" fill="#0c0c18" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.04"/>
+
+    <!-- Status bar -->
+    <g clip-path="url(#phoneClip)">
+      <text x="26" y="36" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#64748b" font-weight="500">9:41</text>
+      <!-- Dynamic island -->
+      <rect x="130" y="12" width="100" height="28" rx="14" fill="#000000"/>
+
+      <!-- Chat header -->
+      <rect x="0" y="55" width="360" height="50" fill="#0c0c18"/>
+      <circle cx="30" cy="80" r="14" fill="#7c3aed" opacity="0.15"/>
+      <text x="30" y="84" text-anchor="middle" font-family="'SF Pro Text', system-ui, sans-serif" font-size="11" fill="#a78bfa" font-weight="500">AB</text>
+      <text x="52" y="76" font-family="'SF Pro Text', system-ui, sans-serif" font-size="14" fill="#f1f5f9" font-weight="500">AgentBridge</text>
+      <text x="52" y="92" font-family="'SF Pro Text', system-ui, sans-serif" font-size="10" fill="#22c55e" font-weight="400">Active</text>
+      <line x1="16" y1="105" x2="344" y2="105" stroke="#ffffff" stroke-opacity="0.04"/>
+
+      <!-- Chat messages -->
+      <!-- User: get me lunch -->
+      <g transform="translate(0, 120)">
+        <rect x="130" y="0" width="210" height="38" rx="16" fill="#7c3aed" fill-opacity="0.2"/>
+        <text x="146" y="24" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#e0e7ff" font-weight="400">Hey, get me lunch please</text>
+      </g>
+
+      <!-- Agent: what kind -->
+      <g transform="translate(0, 174)">
+        <rect x="20" y="0" width="254" height="52" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.05"/>
+        <text x="36" y="22" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#c7d2fe" font-weight="400">Sure! What kind of food are</text>
+        <text x="36" y="40" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#c7d2fe" font-weight="400">you in the mood for?</text>
+      </g>
+
+      <!-- User: poke bowl -->
+      <g transform="translate(0, 242)">
+        <rect x="102" y="0" width="238" height="38" rx="16" fill="#7c3aed" fill-opacity="0.2"/>
+        <text x="118" y="24" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#e0e7ff" font-weight="400">Poke bowl, under $20, delivery</text>
+      </g>
+
+      <!-- Agent: searching indicator -->
+      <g transform="translate(0, 296)">
+        <rect x="20" y="0" width="180" height="32" rx="12" fill="#06b6d4" fill-opacity="0.06" stroke="#06b6d4" stroke-width="0.4" stroke-opacity="0.15"/>
+        <circle cx="38" cy="16" r="3" fill="#06b6d4" opacity="0.5"/>
+        <text x="50" y="20" font-family="'SF Pro Text', system-ui, sans-serif" font-size="11" fill="#67e8f9" font-weight="400">Searching via AgentBridge...</text>
+      </g>
+
+      <!-- Agent: results -->
+      <g transform="translate(0, 344)">
+        <rect x="20" y="0" width="300" height="130" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.05"/>
+        <text x="36" y="24" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#c7d2fe" font-weight="400">Found 3 options:</text>
+
+        <!-- Option cards inside -->
+        <g transform="translate(36, 38)">
+          <rect width="248" height="34" rx="8" fill="#0f0f1a" stroke="#7c3aed" stroke-width="0.4" stroke-opacity="0.2"/>
+          <text x="12" y="22" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#e0e7ff" font-weight="400">Aloha Poke Bowl</text>
+          <text x="212" y="22" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#a78bfa" font-weight="500">$14.99</text>
+        </g>
+        <g transform="translate(36, 78)">
+          <rect width="248" height="34" rx="8" fill="#0f0f1a" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.04"/>
+          <text x="12" y="22" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#94a3b8" font-weight="400">Salmon Deluxe</text>
+          <text x="212" y="22" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#64748b" font-weight="400">$17.50</text>
+        </g>
+      </g>
+
+      <!-- User: confirm -->
+      <g transform="translate(0, 490)">
+        <rect x="114" y="0" width="226" height="38" rx="16" fill="#7c3aed" fill-opacity="0.2"/>
+        <text x="130" y="24" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#e0e7ff" font-weight="400">Aloha Bowl sounds perfect!</text>
+      </g>
+
+      <!-- Agent: order placed -->
+      <g transform="translate(0, 544)">
+        <rect x="20" y="0" width="268" height="52" rx="16" fill="#22c55e" fill-opacity="0.06" stroke="#22c55e" stroke-width="0.4" stroke-opacity="0.15"/>
+        <text x="36" y="22" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#4ade80" font-weight="500">Order placed!</text>
+        <text x="36" y="40" font-family="'SF Pro Text', system-ui, sans-serif" font-size="12" fill="#94a3b8" font-weight="300">$14.99 + $2.99 delivery ~ 30 min</text>
+      </g>
+
+      <!-- Input bar -->
+      <g transform="translate(0, 620)">
+        <rect x="16" y="0" width="280" height="44" rx="22" fill="#0f0f1a" stroke="#ffffff" stroke-width="0.3" stroke-opacity="0.06"/>
+        <text x="36" y="27" font-family="'SF Pro Text', system-ui, sans-serif" font-size="13" fill="#475569" font-weight="300">Message...</text>
+        <!-- Mic button -->
+        <circle cx="326" cy="22" r="20" fill="#7c3aed" fill-opacity="0.15" stroke="#7c3aed" stroke-width="0.5" stroke-opacity="0.3"/>
+        <g transform="translate(326, 22)" stroke="#a78bfa" stroke-width="1.5" fill="none" stroke-linecap="butt">
+          <line x1="0" y1="-6" x2="0" y2="6"/>
+          <path d="M-4 3 Q-4 8 0 8 Q4 8 4 3"/>
+          <line x1="0" y1="8" x2="0" y2="11"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AgentBridge
 
-## Getting Started
+**Making online commerce ready for AI agents.**
 
-First, run the development server:
+AgentBridge is an agent-native commerce platform that lets AI agents shop on your behalf — no screen scraping, no brittle browser automation, just natural conversation.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## The Problem
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Online shopping was designed for humans. When AI agents try to shop for you today, they rely on fragile workarounds: automating clicks, reading pixels off a screen, and breaking every time a website changes its layout. It's slow, unreliable, and not how agent-powered commerce should work.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How AgentBridge Works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Instead of forcing AI agents to pretend to be humans on websites, AgentBridge gives them a structured layer of semantic actions — things like *search restaurants*, *compare prices*, *add to cart*, and *place order*. Agents understand these actions natively, so the entire shopping experience becomes a simple conversation.
 
-## Learn More
+Here's what it looks like in practice:
 
-To learn more about Next.js, take a look at the following resources:
+1. **You say what you want** — "Get me a healthy lunch under $20, delivered."
+2. **The agent discovers options** — It searches nearby restaurants, filters by your preferences, and compares choices.
+3. **You approve** — The agent presents its recommendation. You say yes, and the order is placed.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+No apps to open. No menus to scroll through. No friction.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## What Makes It Different
 
-## Deploy on Vercel
+- **Voice-first interaction** — Talk to the agent like you'd talk to a friend. It understands context, preferences, and budget.
+- **Structured commerce layer** — Agents interact through clean, reliable capabilities (powered by [WebMCP](https://webmcp.org)) instead of scraping websites.
+- **Human in the loop** — The agent handles the legwork, but you always make the final call before anything is purchased.
+- **Real restaurant data** — AgentBridge connects to real restaurant listings to find what's actually available near you.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## The Vision
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+We started with food ordering, but the concept applies everywhere: groceries, retail, travel, services. AgentBridge is infrastructure for a future where humans describe what they want and AI agents handle the rest — reliably, across any store and any category.
+
+## Built With
+
+AgentBridge is built on [WebMCP](https://webmcp.org), an emerging standard that makes the web agent-friendly by giving AI models structured access to website capabilities.
+
+---
+
+*Built for the WebMCP Hackathon.*

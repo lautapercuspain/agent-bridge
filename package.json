@@ -9,9 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.51",
+    "@mcp-b/webmcp-polyfill": "^5.0.1",
+    "@tanstack/react-query": "^5.102.8",
+    "ai": "^7.0.84",
+    "lucide-react": "^1.37.0",
     "next": "16.3.3",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "usewebmcp": "^5.0.1",
+    "webmcp-types": "^0.1.5",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
