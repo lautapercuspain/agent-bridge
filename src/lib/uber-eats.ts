@@ -273,3 +273,148 @@ export async function denyUberEatsOrder(
 		},
 	);
 }
+
+// ---------------------------------------------------------------------------
+// Order webhook processing + observability
+//
+// Uber owns discovery, cart building, and checkout. A merchant integration
+// only begins AFTER the customer confirms their cart: Uber creates the order
+// and sends an `orders.notification` webhook, and the integration accepts or
+// denies it. This is the merchant/POS half of the flow — not consumer ordering.
+// ---------------------------------------------------------------------------
+
+export interface UberWebhookEvent {
+	event_id?: string;
+	event_time?: number;
+	event_type?: string;
+	kind?: string;
+	type?: string;
+	order_id?: string;
+	resource_id?: string;
+	resource_href?: string;
+	meta?: {
+		resource_id?: string;
+		resource_href?: string;
+		status?: string;
+	};
+}
+
+export type ProcessedOrderStatus =
+	| "received"
+	| "accepted"
+	| "failed"
+	| "ignored";
+
+export interface ProcessedOrderEvent {
+	id: string;
+	orderId: string | null;
+	eventType: string;
+	status: ProcessedOrderStatus;
+	source: "uber" | "simulated";
+	receivedAt: string;
+	detail?: string;
+}
+
+// Best-effort in-memory feed. Survives within a warm server instance only
+// (resets on cold start / new serverless instance) — intended for local demo
+// and observability, not durable storage.
+const ORDER_LOG_LIMIT = 25;
+const orderEventLog: ProcessedOrderEvent[] = [];
+
+function recordOrderEvent(event: ProcessedOrderEvent): ProcessedOrderEvent {
+	orderEventLog.unshift(event);
+	if (orderEventLog.length > ORDER_LOG_LIMIT) {
+		orderEventLog.length = ORDER_LOG_LIMIT;
+	}
+	return event;
+}
+
+export function getRecentOrderEvents(limit = ORDER_LOG_LIMIT) {
+	return orderEventLog.slice(0, limit);
+}
+
+function extractEventType(event: UberWebhookEvent): string {
+	return event.event_type ?? event.kind ?? event.type ?? "unknown";
+}
+
+function extractOrderId(event: UberWebhookEvent): string | null {
+	const href = event.meta?.resource_href ?? event.resource_href;
+	const fromHref = href
+		? (href.split("/").filter(Boolean).pop() ?? null)
+		: null;
+	return (
+		event.meta?.resource_id ??
+		event.resource_id ??
+		event.order_id ??
+		fromHref ??
+		null
+	);
+}
+
+export function shouldAutoAccept(): boolean {
+	return process.env.UBER_EATS_AUTO_ACCEPT !== "false";
+}
+
+// Receive an order webhook, then accept it via the Orders API. When
+// `simulated` is true the pipeline runs without calling the live API, so the
+// full receive -> accept -> feed path can be demonstrated without a
+// manually-placed sandbox order.
+export async function processOrderNotification(
+	event: UberWebhookEvent,
+	options: { request?: Request; simulated?: boolean } = {},
+): Promise<ProcessedOrderEvent> {
+	const { request, simulated = false } = options;
+	const eventType = extractEventType(event);
+	const orderId = extractOrderId(event);
+	const base = {
+		id: crypto.randomUUID(),
+		orderId,
+		eventType,
+		source: simulated ? ("simulated" as const) : ("uber" as const),
+		receivedAt: new Date().toISOString(),
+	};
+
+	if (!eventType.toLowerCase().includes("order")) {
+		return recordOrderEvent({
+			...base,
+			status: "ignored",
+			detail: `Non-order event: ${eventType}`,
+		});
+	}
+	if (!orderId) {
+		return recordOrderEvent({
+			...base,
+			status: "failed",
+			detail: "No order id found in webhook payload",
+		});
+	}
+	if (simulated) {
+		return recordOrderEvent({
+			...base,
+			status: "accepted",
+			detail: "Simulated auto-accept (no live Uber API call)",
+		});
+	}
+	if (!shouldAutoAccept()) {
+		return recordOrderEvent({
+			...base,
+			status: "received",
+			detail: "Auto-accept disabled (UBER_EATS_AUTO_ACCEPT=false)",
+		});
+	}
+
+	try {
+		await acceptUberEatsOrder(orderId, {}, request);
+		return recordOrderEvent({
+			...base,
+			status: "accepted",
+			detail: "Auto-accepted via Uber Orders API",
+		});
+	} catch (error) {
+		return recordOrderEvent({
+			...base,
+			status: "failed",
+			detail: error instanceof Error ? error.message : String(error),
+		});
+	}
+}
