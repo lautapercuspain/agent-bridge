@@ -78,8 +78,29 @@ const BEATS = [
 	},
 	{
 		cap: ["Done", "The agent completed checkout \u2014 end to end."],
-		extra: 2500,
+		extra: 2200,
 		say: "Done. The agent completed the entire order — checkout included — on AgentBridge itself.",
+	},
+	{
+		cap: ["It works for anything", "\u201cFind me a healthy lunch under $15.\u201d"],
+		fill: "Find me a healthy lunch under $15.",
+		say: "And it works for anything.",
+	},
+	{
+		cap: ["Agent calls", "Searching healthy spots", "search-restaurants"],
+		tool: ["search-restaurants", { category: "healthy" }],
+		say: "I ask for a healthy lunch under fifteen dollars, and the agent finds the spots.",
+	},
+	{
+		cap: ["Agent calls", "Opening the menu", "get-restaurant-menu"],
+		tool: ["get-restaurant-menu", { restaurantId: "green-bowl" }],
+		say: "It opens Green Bowl and pulls up the menu.",
+	},
+	{
+		cap: ["Agent calls", "Adding to cart", "add-to-cart"],
+		tool: ["add-to-cart", { itemId: "green-bowl-0" }],
+		extra: 1200,
+		say: "…and adds a grain bowl that fits the budget. Same tools, any order.",
 	},
 	{
 		title: ["Built on <b>WebMCP</b>", "Agents and people, on the same page."],
