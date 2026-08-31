@@ -50,7 +50,9 @@ async function main() {
 
 	for (const [key, values] of duplicateKeys) {
 		if (values.length > 1) {
-			fail(`${key} is defined ${values.length} times at lines ${values.map((v) => v.line).join(", ")}`);
+			fail(
+				`${key} is defined ${values.length} times at lines ${values.map((v) => v.line).join(", ")}`,
+			);
 		}
 	}
 
@@ -58,11 +60,19 @@ async function main() {
 	const clientId = env.get("UBER_EATS_CLIENT_ID") || "";
 	const clientSecret = env.get("UBER_EATS_CLIENT_SECRET") || "";
 	const redirectUri = env.get("UBER_EATS_REDIRECT_URI") || "";
-	const oauthScopes = env.get("UBER_EATS_OAUTH_SCOPES") || "eats.pos_provisioning";
-	const clientCredentialScopes = env.get("UBER_EATS_CLIENT_CREDENTIALS_SCOPES") || "eats.store eats.order";
+	const oauthScopes =
+		env.get("UBER_EATS_OAUTH_SCOPES") || "eats.pos_provisioning";
+	const clientCredentialScopes =
+		env.get("UBER_EATS_CLIENT_CREDENTIALS_SCOPES") || "eats.store eats.order";
 
-	const authBaseUrl = environment === "production" ? "https://auth.uber.com" : "https://sandbox-login.uber.com";
-	const apiBaseUrl = environment === "production" ? "https://api.uber.com" : "https://test-api.uber.com";
+	const authBaseUrl =
+		environment === "production"
+			? "https://auth.uber.com"
+			: "https://sandbox-login.uber.com";
+	const apiBaseUrl =
+		environment === "production"
+			? "https://api.uber.com"
+			: "https://test-api.uber.com";
 
 	console.log("Uber Eats config");
 	console.log(`- environment: ${environment}`);
@@ -76,10 +86,13 @@ async function main() {
 
 	if (!clientId) fail("UBER_EATS_CLIENT_ID is missing");
 	if (!clientSecret) fail("UBER_EATS_CLIENT_SECRET is missing");
-	if (clientSecret === "your_rotated_client_secret") fail("UBER_EATS_CLIENT_SECRET is still the placeholder value");
+	if (clientSecret === "your_rotated_client_secret")
+		fail("UBER_EATS_CLIENT_SECRET is still the placeholder value");
 	if (!redirectUri) fail("UBER_EATS_REDIRECT_URI is missing");
 	if (redirectUri && !redirectUri.includes("/api/uber-eats/oauth/callback")) {
-		fail("UBER_EATS_REDIRECT_URI should point to /api/uber-eats/oauth/callback");
+		fail(
+			"UBER_EATS_REDIRECT_URI should point to /api/uber-eats/oauth/callback",
+		);
 	}
 	if (process.exitCode) return;
 

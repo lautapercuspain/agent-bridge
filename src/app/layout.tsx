@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "AgentBridge — Agent-Native Commerce",
+	title: "AgentBridge — Agent-Native Food Delivery",
 	description:
-		"Talk to an AI agent to order food. AgentBridge exposes commerce capabilities to agents through the WebMCP protocol.",
+		"AgentBridge is an agent-native food ordering marketplace. AI agents browse, build a cart, and check out for you through WebMCP tools.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 			lang="en"
 			className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
 		>
-			<body className="min-h-full flex flex-col">
+			<body className="min-h-full flex flex-col bg-cream font-sans text-ink">
 				<Providers>
 					<WebMCPProvider>{children}</WebMCPProvider>
 				</Providers>

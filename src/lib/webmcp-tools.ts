@@ -1,260 +1,329 @@
 "use client";
 
 import { create } from "zustand";
-import { generateDeliveryLinks } from "@/lib/delivery-links";
-import { filterMenuItems, getMenuForRestaurant } from "@/lib/mock-menus";
-import { useCartStore } from "@/stores/cart-store";
-import { useLocationStore } from "@/stores/location-store";
-import type { MenuItem, Restaurant } from "@/types";
+import {
+	CATEGORIES,
+	getMenuForRestaurant,
+	getRestaurantById,
+	queryRestaurants,
+	resolveRestaurant,
+} from "@/lib/catalog";
+import { lineUnitPrice, useCartStore } from "@/stores/cart-store";
+import { useOrderStore } from "@/stores/order-store";
+import type { MenuItem, MenuOption, Restaurant } from "@/types";
 
-// Store for agent-driven UI state updates
+export type StorefrontView = "browse" | "restaurant" | "checkout" | "order";
+
+export const DEFAULT_ADDRESS = "Home · 1600 Market St, San Francisco";
+
+interface StorefrontFilters {
+	sortBy: "recommended" | "rating" | "eta" | "deliveryFee";
+	freeDelivery: boolean;
+	offers: boolean;
+	topRated: boolean;
+	under30: boolean;
+}
+
+const DEFAULT_FILTERS: StorefrontFilters = {
+	sortBy: "recommended",
+	freeDelivery: false,
+	offers: false,
+	topRated: false,
+	under30: false,
+};
+
+// Agent-driven storefront state. WebMCP tools mutate this, and the UI renders
+// from it, so the human sees exactly what the agent is doing in real time.
 interface AgentUIState {
+	view: StorefrontView;
 	restaurants: Restaurant[];
-	currentMenu: MenuItem[];
 	currentRestaurant: Restaurant | null;
-	comparisonItems: MenuItem[];
-	checkoutRequested: boolean;
+	currentMenu: MenuItem[];
+	selectedCategoryId: string | null;
+	browseLabel: string;
+	deliveryAddress: string;
+	filters: StorefrontFilters;
+	activeItem: MenuItem | null;
 
-	setRestaurants: (restaurants: Restaurant[]) => void;
-	setMenu: (restaurant: Restaurant, menu: MenuItem[]) => void;
-	setComparisonItems: (items: MenuItem[]) => void;
-	setCheckoutRequested: (requested: boolean) => void;
+	showBrowse: (
+		restaurants: Restaurant[],
+		label?: string,
+		categoryId?: string | null,
+	) => void;
+	showRestaurant: (restaurant: Restaurant, menu: MenuItem[]) => void;
+	showCheckout: () => void;
+	showOrder: () => void;
+	setDeliveryAddress: (address: string) => void;
+	setFilters: (patch: Partial<StorefrontFilters>) => void;
+	setActiveItem: (item: MenuItem | null) => void;
 	reset: () => void;
 }
 
 export const useAgentUIStore = create<AgentUIState>((set) => ({
+	view: "browse",
 	restaurants: [],
-	currentMenu: [],
 	currentRestaurant: null,
-	comparisonItems: [],
-	checkoutRequested: false,
+	currentMenu: [],
+	selectedCategoryId: null,
+	browseLabel: "",
+	deliveryAddress: DEFAULT_ADDRESS,
+	filters: DEFAULT_FILTERS,
+	activeItem: null,
 
-	setRestaurants: (restaurants) => set({ restaurants }),
-	setMenu: (restaurant, menu) =>
-		set({ currentRestaurant: restaurant, currentMenu: menu }),
-	setComparisonItems: (items) => set({ comparisonItems: items }),
-	setCheckoutRequested: (requested) => set({ checkoutRequested: requested }),
+	showBrowse: (restaurants, label = "", categoryId = null) =>
+		set({
+			view: "browse",
+			restaurants,
+			browseLabel: label,
+			selectedCategoryId: categoryId,
+			currentRestaurant: null,
+		}),
+	showRestaurant: (restaurant, menu) =>
+		set({
+			view: "restaurant",
+			currentRestaurant: restaurant,
+			currentMenu: menu,
+		}),
+	showCheckout: () => set({ view: "checkout" }),
+	showOrder: () => set({ view: "order" }),
+	setDeliveryAddress: (deliveryAddress) => set({ deliveryAddress }),
+	setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
+	setActiveItem: (activeItem) => set({ activeItem }),
 	reset: () =>
 		set({
+			view: "browse",
 			restaurants: [],
-			currentMenu: [],
 			currentRestaurant: null,
-			comparisonItems: [],
-			checkoutRequested: false,
+			currentMenu: [],
+			selectedCategoryId: null,
+			browseLabel: "",
+			filters: DEFAULT_FILTERS,
+			activeItem: null,
 		}),
 }));
 
-// Resolve a restaurant from the last search results by exact id, exact name,
-// or fuzzy name match — so the agent succeeds even when it passes a name.
-function resolveRestaurant(idOrName: string): Restaurant | undefined {
-	const list = useAgentUIStore.getState().restaurants;
-	const q = idOrName.trim().toLowerCase();
-	return (
-		list.find((r) => r.id === idOrName) ??
-		list.find((r) => r.name.toLowerCase() === q) ??
-		list.find(
-			(r) =>
-				r.name.toLowerCase().includes(q) || q.includes(r.name.toLowerCase()),
-		)
-	);
-}
-
-// Resolve a menu item from the current menu by exact id, exact name, or fuzzy
-// name match.
+// Resolve a menu item by id or name from the current menu, then from the
+// current restaurant's full menu — so the agent recovers if it passes a name.
 function resolveMenuItem(idOrName: string): MenuItem | undefined {
-	const menu = useAgentUIStore.getState().currentMenu;
+	const state = useAgentUIStore.getState();
 	const q = idOrName.trim().toLowerCase();
-	return (
-		menu.find((m) => m.id === idOrName) ??
-		menu.find((m) => m.name.toLowerCase() === q) ??
-		menu.find(
+	const search = (list: MenuItem[]) =>
+		list.find((m) => m.id === idOrName) ??
+		list.find((m) => m.name.toLowerCase() === q) ??
+		list.find(
 			(m) =>
 				m.name.toLowerCase().includes(q) || q.includes(m.name.toLowerCase()),
-		)
-	);
+		);
+	const found = search(state.currentMenu);
+	if (found) return found;
+	if (state.currentRestaurant) {
+		return search(getMenuForRestaurant(state.currentRestaurant.id));
+	}
+	return undefined;
 }
 
-// Tool definitions that map to WebMCP ModelContextTool shape.
-// Each execute reads fresh store state via getState() so tools never operate
-// on a stale snapshot captured at registration time. Tools are designed to be
-// self-healing: they accept ids or names and return actionable alternatives
-// rather than hard errors, so the agent can recover autonomously.
+function text(obj: unknown) {
+	return {
+		content: [
+			{
+				type: "text",
+				text: typeof obj === "string" ? obj : JSON.stringify(obj),
+			},
+		],
+	};
+}
+
+function cartSummary() {
+	const cart = useCartStore.getState();
+	return {
+		restaurant: cart.restaurantName,
+		itemCount: cart.getCount(),
+		items: cart.items.map((ci) => ({
+			id: ci.menuItem.id,
+			name: ci.menuItem.name,
+			quantity: ci.quantity,
+			unitPrice: Number(lineUnitPrice(ci).toFixed(2)),
+			lineTotal: Number((lineUnitPrice(ci) * ci.quantity).toFixed(2)),
+		})),
+		totals: cart.getTotals(),
+	};
+}
+
+const CATEGORY_IDS = CATEGORIES.map((c) => c.id);
+
 export function createToolDefinitions() {
 	return {
+		"list-categories": {
+			name: "list-categories",
+			description:
+				"List all food categories available on AgentBridge (e.g. breakfast, burgers, sushi, indian, mediterranean). Use this to discover what the user can browse.",
+			inputSchema: { type: "object", properties: {} },
+			annotations: { readOnlyHint: true, untrustedContentHint: false },
+			execute: async () =>
+				text({
+					categories: CATEGORIES.map((c) => ({ id: c.id, name: c.name })),
+				}),
+		},
+
 		"search-restaurants": {
 			name: "search-restaurants",
 			description:
-				"Search for restaurants by cuisine type, location, and price range. Returns a list of matching restaurants with ratings, distance, and price level.",
+				"Search AgentBridge restaurants by category, cuisine, or free-text query, with optional filters. Returns matching restaurants with ratings, price, ETA, and delivery fee. Updates the storefront so the user sees the results.",
 			inputSchema: {
 				type: "object",
 				properties: {
+					query: {
+						type: "string",
+						description: "Free-text search (e.g. 'spicy ramen', 'vegan')",
+					},
+					category: {
+						type: "string",
+						enum: CATEGORY_IDS,
+						description: "Category id to filter by",
+					},
 					cuisine: {
 						type: "string",
-						description:
-							"Type of cuisine (e.g., italian, mexican, japanese, thai, indian, chinese, american, mediterranean)",
-					},
-					location: {
-						type: "string",
-						description:
-							"Delivery location or area (e.g., 'San Francisco, CA')",
+						description: "Cuisine name (e.g. italian, indian, sushi)",
 					},
 					priceLevel: {
 						type: "string",
 						enum: ["$", "$$", "$$$", "$$$$"],
-						description: "Price range filter",
+						description: "Price level filter",
 					},
 					sortBy: {
 						type: "string",
-						enum: ["rating", "distance", "price"],
-						description: "How to sort results",
+						enum: ["recommended", "rating", "eta", "deliveryFee"],
+						description: "Sort order",
+					},
+					freeDelivery: {
+						type: "boolean",
+						description: "Only show restaurants with free delivery",
+					},
+					offers: {
+						type: "boolean",
+						description: "Only show restaurants running an offer/promo",
+					},
+					topRated: {
+						type: "boolean",
+						description: "Only show top-rated restaurants (4.6+)",
+					},
+					under30: {
+						type: "boolean",
+						description: "Only show restaurants delivering in 30 min or less",
 					},
 				},
 			},
 			annotations: { readOnlyHint: true, untrustedContentHint: false },
-			execute: async (input: Record<string, unknown>) => {
-				const agentUI = useAgentUIStore.getState();
-
-				// Inject auto-detected location when the agent doesn't specify one
-				if (!input.location) {
-					const loc = useLocationStore.getState();
-					if (loc.latitude != null && loc.longitude != null) {
-						input.latitude = loc.latitude;
-						input.longitude = loc.longitude;
-					} else if (loc.cityName) {
-						input.location = loc.cityName;
-					}
-				}
-
-				const res = await fetch(
-					`/api/restaurants?${new URLSearchParams(
-						Object.entries(input)
-							.filter(([, v]) => v != null)
-							.map(([k, v]) => [k, String(v)]),
-					).toString()}`,
-				);
-				if (!res.ok) throw new Error("Restaurant search failed");
-				const data = await res.json();
-				agentUI.setRestaurants(data.restaurants);
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify({
-								count: data.restaurants.length,
-								note: "When calling get-restaurant-menu or filter-menu-items, pass the exact 'id' value below.",
-								restaurants: data.restaurants.map((r: Restaurant) => ({
-									id: r.id,
-									name: r.name,
-									cuisine: r.cuisine,
-									priceLevel: r.priceLevel,
-									rating: r.rating,
-									distance: r.distance,
-								})),
-							}),
-						},
-					],
-				};
+			execute: async (input: {
+				query?: string;
+				category?: string;
+				cuisine?: string;
+				priceLevel?: string;
+				sortBy?: "recommended" | "rating" | "eta" | "deliveryFee";
+				freeDelivery?: boolean;
+				offers?: boolean;
+				topRated?: boolean;
+				under30?: boolean;
+			}) => {
+				const results = queryRestaurants({
+					categoryId: input.category,
+					cuisine: input.cuisine,
+					query: input.query,
+					priceLevel: input.priceLevel,
+					sortBy: input.sortBy,
+					freeDelivery: input.freeDelivery,
+					offers: input.offers,
+					topRated: input.topRated,
+					under30: input.under30,
+				});
+				const label =
+					input.query ||
+					input.cuisine ||
+					(input.category &&
+						CATEGORIES.find((c) => c.id === input.category)?.name) ||
+					"All restaurants";
+				useAgentUIStore
+					.getState()
+					.showBrowse(results, label, input.category ?? null);
+				return text({
+					count: results.length,
+					note: "Pass a restaurant 'id' to get-restaurant-menu.",
+					restaurants: results.map((r) => ({
+						id: r.id,
+						name: r.name,
+						cuisine: r.cuisine,
+						rating: r.rating,
+						priceLevel: r.priceLevel,
+						etaMinutes: r.etaMinutes,
+						deliveryFee: r.deliveryFee,
+						promo: r.promo ?? null,
+					})),
+					...(results.length === 0
+						? {
+								hint: "No exact matches. Suggest one of these instead and continue.",
+								suggestions: queryRestaurants({})
+									.slice(0, 6)
+									.map((r) => ({ id: r.id, name: r.name, cuisine: r.cuisine })),
+							}
+						: {}),
+				});
 			},
 		},
 
 		"get-restaurant-menu": {
 			name: "get-restaurant-menu",
 			description:
-				"Get the full menu for a restaurant. Pass the restaurant's 'id' from search results (a name also works). Returns menu items with their ids, prices, and dietary tags.",
+				"Open a restaurant and get its full menu. Pass the restaurant 'id' from search results (a name also works). Returns menu items with ids, prices, sections, and dietary tags, and shows the restaurant to the user.",
 			inputSchema: {
 				type: "object",
 				properties: {
 					restaurantId: {
 						type: "string",
 						description:
-							"The restaurant id from search results (a restaurant name is also accepted)",
+							"The restaurant id from search results (name also works)",
 					},
 				},
 				required: ["restaurantId"],
 			},
 			annotations: { readOnlyHint: true, untrustedContentHint: false },
 			execute: async (input: { restaurantId: string }) => {
-				const agentUI = useAgentUIStore.getState();
 				const resolved = resolveRestaurant(input.restaurantId);
-
-				// Fast, reliable path: the restaurant is already known from search,
-				// so build its menu locally with no extra network call.
-				if (resolved) {
-					const menu = getMenuForRestaurant(resolved.id, resolved.categories);
-					agentUI.setMenu(resolved, menu);
-					return {
-						content: [
-							{
-								type: "text",
-								text: JSON.stringify({
-									restaurant: resolved.name,
-									items: menu.map((m) => ({
-										id: m.id,
-										name: m.name,
-										price: m.price,
-										description: m.description,
-										dietaryTags: m.dietaryTags,
-									})),
-								}),
-							},
-						],
-					};
+				if (!resolved) {
+					return text({
+						error: "That restaurant could not be found.",
+						availableRestaurants: queryRestaurants({})
+							.slice(0, 8)
+							.map((r) => ({ id: r.id, name: r.name })),
+					});
 				}
-
-				const res = await fetch(
-					`/api/menu/${encodeURIComponent(input.restaurantId)}`,
-				);
-
-				if (!res.ok) {
-					// Auto-recover: hand the agent the valid choices instead of failing.
-					return {
-						content: [
-							{
-								type: "text",
-								text: JSON.stringify({
-									error: "That menu could not be loaded.",
-									hint: "Choose one of the available restaurants below by its exact id and call get-restaurant-menu again.",
-									availableRestaurants: agentUI.restaurants
-										.slice(0, 6)
-										.map((r) => ({ id: r.id, name: r.name })),
-								}),
-							},
-						],
-					};
-				}
-
-				const data = await res.json();
-				agentUI.setMenu(data.restaurant, data.menu);
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify({
-								restaurant: data.restaurant.name,
-								items: data.menu.map((m: MenuItem) => ({
-									id: m.id,
-									name: m.name,
-									price: m.price,
-									description: m.description,
-									dietaryTags: m.dietaryTags,
-								})),
-							}),
-						},
-					],
-				};
+				const menu = getMenuForRestaurant(resolved.id);
+				useAgentUIStore.getState().showRestaurant(resolved, menu);
+				return text({
+					restaurant: { id: resolved.id, name: resolved.name },
+					sections: [...new Set(menu.map((m) => m.category))],
+					items: menu.map((m) => ({
+						id: m.id,
+						name: m.name,
+						price: m.price,
+						section: m.category,
+						description: m.description,
+						dietaryTags: m.dietaryTags,
+						popular: m.popular,
+					})),
+				});
 			},
 		},
 
 		"filter-menu-items": {
 			name: "filter-menu-items",
 			description:
-				"Filter menu items by dietary preferences, maximum price, category, or search query.",
+				"Filter the current restaurant's menu by dietary tags, maximum price, section, or a search query.",
 			inputSchema: {
 				type: "object",
 				properties: {
 					restaurantId: {
 						type: "string",
-						description: "The restaurant ID",
+						description: "Restaurant id (defaults to the open restaurant)",
 					},
 					dietaryTags: {
 						type: "array",
@@ -263,121 +332,75 @@ export function createToolDefinitions() {
 							"Dietary filters: vegetarian, vegan, gluten-free, dairy-free, nut-free, spicy, halal, kosher",
 					},
 					maxPrice: { type: "number", description: "Maximum price per item" },
-					category: {
+					section: {
 						type: "string",
-						description: "Menu category (e.g., Appetizers, Entrees, Desserts)",
+						description: "Menu section (e.g. Popular, Sides, Drinks, Desserts)",
 					},
 					query: {
 						type: "string",
-						description:
-							"Search query to match against item names and descriptions",
+						description: "Text to match in item name/description",
 					},
 				},
-				required: ["restaurantId"],
 			},
 			annotations: { readOnlyHint: true, untrustedContentHint: false },
 			execute: async (input: {
-				restaurantId: string;
+				restaurantId?: string;
 				dietaryTags?: string[];
 				maxPrice?: number;
-				category?: string;
+				section?: string;
 				query?: string;
 			}) => {
-				const agentUI = useAgentUIStore.getState();
-				const resolved =
-					resolveRestaurant(input.restaurantId) ?? agentUI.currentRestaurant;
-				const restaurantId = resolved?.id ?? input.restaurantId;
-				const categories = resolved?.categories ?? ["American"];
-				const allItems = getMenuForRestaurant(restaurantId, categories);
-				const filtered = filterMenuItems(allItems, {
-					dietaryTags: input.dietaryTags as MenuItem["dietaryTags"],
-					maxPrice: input.maxPrice,
-					category: input.category,
-					query: input.query,
+				const store = useAgentUIStore.getState();
+				const resolved = input.restaurantId
+					? resolveRestaurant(input.restaurantId)
+					: store.currentRestaurant;
+				if (!resolved) {
+					return text({
+						error: "Open a restaurant first with get-restaurant-menu.",
+					});
+				}
+				const all = getMenuForRestaurant(resolved.id);
+				const q = input.query?.trim().toLowerCase();
+				const filtered = all.filter((m) => {
+					if (
+						input.dietaryTags?.length &&
+						!input.dietaryTags.every((t) =>
+							m.dietaryTags.includes(t as MenuItem["dietaryTags"][number]),
+						)
+					)
+						return false;
+					if (input.maxPrice != null && m.price > input.maxPrice) return false;
+					if (
+						input.section &&
+						m.category.toLowerCase() !== input.section.toLowerCase()
+					)
+						return false;
+					if (
+						q &&
+						!m.name.toLowerCase().includes(q) &&
+						!m.description.toLowerCase().includes(q)
+					)
+						return false;
+					return true;
 				});
-				agentUI.setMenu(
-					resolved ?? {
-						id: restaurantId,
-						name: "Restaurant",
-						cuisine: "",
-						rating: 0,
-						reviewCount: 0,
-						priceLevel: "$$",
-						address: "",
-						distance: "",
-						imageUrl: "",
-						phone: "",
-						categories: [],
-						isOpen: true,
-					},
-					filtered,
-				);
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify({
-								count: filtered.length,
-								items: filtered.map((m) => ({
-									id: m.id,
-									name: m.name,
-									price: m.price,
-									description: m.description,
-									dietaryTags: m.dietaryTags,
-								})),
-							}),
-						},
-					],
-				};
-			},
-		},
-
-		"compare-options": {
-			name: "compare-options",
-			description:
-				"Compare multiple menu items side by side. Shows price, dietary info, and descriptions for easy comparison.",
-			inputSchema: {
-				type: "object",
-				properties: {
-					itemIds: {
-						type: "array",
-						items: { type: "string" },
-						description: "Array of menu item IDs to compare",
-					},
-				},
-				required: ["itemIds"],
-			},
-			annotations: { readOnlyHint: true, untrustedContentHint: false },
-			execute: async (input: { itemIds: string[] }) => {
-				const agentUI = useAgentUIStore.getState();
-				const items = input.itemIds
-					.map((idOrName) => resolveMenuItem(idOrName))
-					.filter((m): m is MenuItem => m != null);
-				agentUI.setComparisonItems(items);
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify({
-								comparison: items.map((m) => ({
-									id: m.id,
-									name: m.name,
-									price: m.price,
-									description: m.description,
-									dietaryTags: m.dietaryTags,
-									popular: m.popular,
-								})),
-							}),
-						},
-					],
-				};
+				store.showRestaurant(resolved, filtered);
+				return text({
+					count: filtered.length,
+					items: filtered.map((m) => ({
+						id: m.id,
+						name: m.name,
+						price: m.price,
+						section: m.category,
+						dietaryTags: m.dietaryTags,
+					})),
+				});
 			},
 		},
 
 		"add-to-cart": {
 			name: "add-to-cart",
 			description:
-				"Add a menu item to the user's cart. Pass the item's 'id' from the menu (a name also works).",
+				"Add a menu item to the cart. Pass the item 'id' from the menu (a name also works), an optional quantity, and optional option ids for size/extras.",
 			inputSchema: {
 				type: "object",
 				properties: {
@@ -385,253 +408,182 @@ export function createToolDefinitions() {
 						type: "string",
 						description: "The menu item id (an item name is also accepted)",
 					},
-					quantity: {
-						type: "number",
-						description: "Number of items to add (default: 1)",
+					quantity: { type: "number", description: "Quantity (default 1)" },
+					optionIds: {
+						type: "array",
+						items: { type: "string" },
+						description:
+							"Optional option ids (e.g. 'large') from the item's option groups",
 					},
 				},
 				required: ["itemId"],
 			},
 			annotations: { readOnlyHint: false, untrustedContentHint: false },
-			execute: async (input: { itemId: string; quantity?: number }) => {
-				const agentUI = useAgentUIStore.getState();
-				const cart = useCartStore.getState();
+			execute: async (input: {
+				itemId: string;
+				quantity?: number;
+				optionIds?: string[];
+			}) => {
+				const store = useAgentUIStore.getState();
 				const item = resolveMenuItem(input.itemId);
 				if (!item) {
-					// Auto-recover: give the agent the valid items to choose from.
-					return {
-						content: [
-							{
-								type: "text",
-								text: JSON.stringify({
-									error: "That item isn't on the current menu.",
-									hint: "Pick one of the available items below by its exact id and call add-to-cart again.",
-									availableItems: agentUI.currentMenu
-										.slice(0, 12)
-										.map((m) => ({ id: m.id, name: m.name, price: m.price })),
-								}),
-							},
-						],
-					};
+					return text({
+						error: "That item isn't on the current menu.",
+						availableItems: store.currentMenu
+							.slice(0, 12)
+							.map((m) => ({ id: m.id, name: m.name, price: m.price })),
+					});
 				}
-				const restaurant = agentUI.currentRestaurant;
-				const qty = input.quantity ?? 1;
-				for (let i = 0; i < qty; i++) {
-					cart.addItem(item, restaurant?.id ?? "", restaurant?.name ?? "");
+				const options: MenuOption[] = [];
+				if (input.optionIds?.length && item.optionGroups) {
+					for (const group of item.optionGroups) {
+						for (const opt of group.options) {
+							if (input.optionIds.includes(opt.id)) options.push(opt);
+						}
+					}
 				}
-				return {
-					content: [
-						{
-							type: "text",
-							text: `Added ${qty}x ${item.name} ($${item.price.toFixed(2)} each) to cart`,
-						},
-					],
-				};
+				const qty = Math.max(1, input.quantity ?? 1);
+				useCartStore.getState().addItem(item, options, qty);
+				return text({
+					added: { id: item.id, name: item.name, quantity: qty },
+					...cartSummary(),
+				});
 			},
 		},
 
 		"remove-from-cart": {
 			name: "remove-from-cart",
-			description:
-				"Remove an item from the user's cart. Pass the item's id or name.",
+			description: "Remove an item from the cart. Pass the item id or name.",
 			inputSchema: {
 				type: "object",
 				properties: {
-					itemId: {
-						type: "string",
-						description: "The menu item id or name to remove",
-					},
+					itemId: { type: "string", description: "The menu item id or name" },
 				},
 				required: ["itemId"],
 			},
 			annotations: { readOnlyHint: false, untrustedContentHint: false },
 			execute: async (input: { itemId: string }) => {
-				const cart = useCartStore.getState();
-				const q = input.itemId.trim().toLowerCase();
-				const target =
-					cart.items.find((ci) => ci.menuItem.id === input.itemId) ??
-					cart.items.find((ci) => ci.menuItem.name.toLowerCase() === q) ??
-					cart.items.find((ci) => ci.menuItem.name.toLowerCase().includes(q));
-				if (!target) {
-					return {
-						content: [
-							{
-								type: "text",
-								text: JSON.stringify({
-									error: "That item isn't in the cart.",
-									cartItems: cart.items.map((ci) => ({
-										id: ci.menuItem.id,
-										name: ci.menuItem.name,
-									})),
-								}),
-							},
-						],
-					};
+				const removed = useCartStore.getState().removeItem(input.itemId);
+				if (!removed) {
+					return text({
+						error: "That item isn't in the cart.",
+						...cartSummary(),
+					});
 				}
-				cart.removeItem(target.menuItem.id);
-				return {
-					content: [
-						{ type: "text", text: `Removed ${target.menuItem.name} from cart` },
-					],
-				};
+				return text({ removed: input.itemId, ...cartSummary() });
 			},
 		},
 
-		"get-cart-summary": {
-			name: "get-cart-summary",
+		"update-cart-item": {
+			name: "update-cart-item",
 			description:
-				"Get the current shortlist contents including items, quantities, and an estimated subtotal. Prices are planning estimates; the live total is shown in the delivery app at checkout.",
-			inputSchema: {
-				type: "object",
-				properties: {},
-			},
-			annotations: { readOnlyHint: true, untrustedContentHint: false },
-			execute: async () => {
-				const cart = useCartStore.getState();
-				const items = cart.items;
-				const subtotal = cart.getSubtotal();
-
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify({
-								restaurant: cart.restaurantName,
-								items: items.map((ci) => ({
-									name: ci.menuItem.name,
-									quantity: ci.quantity,
-									price: ci.menuItem.price,
-									lineTotal: ci.menuItem.price * ci.quantity,
-								})),
-								estimatedSubtotal: subtotal.toFixed(2),
-								note: "Estimated subtotal only. The user completes payment and delivery in their delivery app.",
-							}),
-						},
-					],
-				};
-			},
-		},
-
-		"get-delivery-options": {
-			name: "get-delivery-options",
-			description:
-				"List the delivery apps (Uber Eats, Rappi, PedidosYa, DiDi Food) the user can order from for a restaurant, based on their country. Pass the restaurant id or name.",
+				"Set the quantity of an item already in the cart. Pass the item id or name and the new quantity (0 removes it).",
 			inputSchema: {
 				type: "object",
 				properties: {
-					restaurantId: {
-						type: "string",
-						description:
-							"The restaurant id or name (defaults to the current restaurant or shortlist restaurant)",
-					},
+					itemId: { type: "string", description: "The menu item id or name" },
+					quantity: { type: "number", description: "New quantity" },
 				},
-			},
-			annotations: { readOnlyHint: true, untrustedContentHint: false },
-			execute: async (input: { restaurantId?: string }) => {
-				const agentUI = useAgentUIStore.getState();
-				const cart = useCartStore.getState();
-				const loc = useLocationStore.getState();
-				const restaurantName =
-					(input.restaurantId
-						? resolveRestaurant(input.restaurantId)?.name
-						: undefined) ??
-					agentUI.currentRestaurant?.name ??
-					cart.restaurantName;
-
-				if (!restaurantName) {
-					return {
-						content: [
-							{
-								type: "text",
-								text: JSON.stringify({
-									error: "No restaurant selected yet.",
-									hint: "Search for restaurants or open a menu first, then ask again.",
-								}),
-							},
-						],
-					};
-				}
-
-				const links = generateDeliveryLinks(restaurantName, loc.countryCode);
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify({
-								restaurant: restaurantName,
-								options: links.map((l) => ({ platform: l.label, url: l.url })),
-							}),
-						},
-					],
-				};
-			},
-		},
-
-		"checkout-on-platform": {
-			name: "checkout-on-platform",
-			description:
-				"Hand off to a real delivery app to place the order. Opens the shortlist with the selected items and 'Find on ...' buttons for available delivery apps (Uber Eats, Rappi, PedidosYa, DiDi Food). Uber Eats Order Integration is post-checkout merchant/POS integration, so this app cannot create or prefill a customer's Uber Eats cart. The user adds the items, pays, and arranges delivery there. Optionally pass a platform to open it directly.",
-			inputSchema: {
-				type: "object",
-				properties: {
-					platform: {
-						type: "string",
-						enum: ["uber-eats", "rappi", "pedidosya", "didi-food"],
-						description:
-							"The delivery app to open directly, if the user chose one",
-					},
-				},
+				required: ["itemId", "quantity"],
 			},
 			annotations: { readOnlyHint: false, untrustedContentHint: false },
-			execute: async (input: { platform?: string }) => {
-				const agentUI = useAgentUIStore.getState();
+			execute: async (input: { itemId: string; quantity: number }) => {
+				useCartStore.getState().updateQuantity(input.itemId, input.quantity);
+				return text(cartSummary());
+			},
+		},
+
+		"get-cart": {
+			name: "get-cart",
+			description:
+				"Get the current cart: items, quantities, and the full price breakdown (subtotal, delivery, service fee, tax, total).",
+			inputSchema: { type: "object", properties: {} },
+			annotations: { readOnlyHint: true, untrustedContentHint: false },
+			execute: async () => text(cartSummary()),
+		},
+
+		"start-checkout": {
+			name: "start-checkout",
+			description:
+				"Open the checkout screen with the current cart and delivery address. Call this before place-order so the user can review the order.",
+			inputSchema: { type: "object", properties: {} },
+			annotations: { readOnlyHint: false, untrustedContentHint: false },
+			execute: async () => {
 				const cart = useCartStore.getState();
-				const loc = useLocationStore.getState();
-				const restaurantName =
-					cart.restaurantName ?? agentUI.currentRestaurant?.name;
-
-				if (!restaurantName) {
-					return {
-						content: [
-							{
-								type: "text",
-								text: "No restaurant selected yet. Search and open a restaurant before checking out.",
-							},
-						],
-					};
+				if (cart.items.length === 0) {
+					return text({
+						error: "The cart is empty. Add items before checking out.",
+					});
 				}
+				const store = useAgentUIStore.getState();
+				store.showCheckout();
+				return text({
+					message: "Checkout is open. Call place-order to confirm the order.",
+					deliveryAddress: store.deliveryAddress,
+					...cartSummary(),
+				});
+			},
+		},
 
-				const links = generateDeliveryLinks(restaurantName, loc.countryCode);
-				agentUI.setCheckoutRequested(true);
-
-				// If the user picked a specific app, open it directly.
-				const chosen = input.platform
-					? links.find((l) => l.platform === input.platform)
-					: undefined;
-				if (chosen && typeof window !== "undefined") {
-					window.open(chosen.url, "_blank", "noopener,noreferrer");
+		"place-order": {
+			name: "place-order",
+			description:
+				"Place the order on AgentBridge and complete checkout. Confirms the order, clears the cart, and shows live order tracking. Use this once the user has approved the order.",
+			inputSchema: { type: "object", properties: {} },
+			annotations: { readOnlyHint: false, untrustedContentHint: false },
+			execute: async () => {
+				const cart = useCartStore.getState();
+				const rid = cart.restaurantId;
+				if (cart.items.length === 0 || !rid) {
+					return text({
+						error: "The cart is empty. Add items before placing an order.",
+					});
 				}
+				const store = useAgentUIStore.getState();
+				const restaurant = getRestaurantById(rid);
+				const totals = cart.getTotals();
+				const order = useOrderStore.getState().placeOrder({
+					restaurantId: rid,
+					restaurantName: cart.restaurantName ?? restaurant?.name ?? "",
+					items: cart.items,
+					totals,
+					address: store.deliveryAddress,
+					etaMinutes: restaurant?.etaMinutes ?? 30,
+				});
+				cart.clearCart();
+				store.showOrder();
+				return text({
+					success: true,
+					orderId: order.id,
+					status: order.status,
+					etaMinutes: order.etaMinutes,
+					total: totals.total,
+					restaurant: order.restaurantName,
+					courier: order.courierName,
+					message: `Order ${order.id} placed and confirmed — arriving in about ${order.etaMinutes} minutes.`,
+				});
+			},
+		},
 
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify({
-								restaurant: restaurantName,
-								shortlist: cart.items.map((ci) => ({
-									name: ci.menuItem.name,
-									quantity: ci.quantity,
-								})),
-								openedApp: chosen?.label ?? null,
-								availableApps: links.map((l) => l.label),
-								message: chosen
-									? `Opening ${chosen.label} for ${restaurantName}. The shortlist is visible in AgentBridge; the user adds those items, then finishes payment and delivery there.`
-									: `Ready to order from ${restaurantName}. The user can tap a delivery app in the shortlist, add the selected items there, then complete checkout.`,
-								note: "Uber Eats Order Integration starts after checkout for merchant/POS systems, so AgentBridge cannot prefill a customer cart in Uber Eats.",
-							}),
-						},
-					],
-				};
+		"get-order-status": {
+			name: "get-order-status",
+			description:
+				"Check the status of the current order (confirmed, preparing, on the way, or delivered) and its ETA.",
+			inputSchema: { type: "object", properties: {} },
+			annotations: { readOnlyHint: true, untrustedContentHint: false },
+			execute: async () => {
+				const order = useOrderStore.getState().currentOrder;
+				if (!order) {
+					return text({ error: "No active order yet." });
+				}
+				return text({
+					orderId: order.id,
+					status: order.status,
+					etaMinutes: order.etaMinutes,
+					restaurant: order.restaurantName,
+					courier: order.courierName,
+					total: order.totals.total,
+				});
 			},
 		},
 	};

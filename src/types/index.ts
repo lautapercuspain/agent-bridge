@@ -1,16 +1,37 @@
+export interface Category {
+	id: string;
+	name: string;
+	imageUrl: string;
+}
+
 export interface Restaurant {
 	id: string;
 	name: string;
 	cuisine: string;
+	categoryIds: string[];
 	rating: number;
 	reviewCount: number;
 	priceLevel: "$" | "$$" | "$$$" | "$$$$";
-	address: string;
-	distance: string;
+	deliveryFee: number;
+	etaMinutes: number;
 	imageUrl: string;
-	phone: string;
-	categories: string[];
+	promo?: string;
+	tags: string[];
 	isOpen: boolean;
+	distance: string;
+	address: string;
+}
+
+export interface MenuOption {
+	id: string;
+	name: string;
+	price: number;
+}
+
+export interface MenuOptionGroup {
+	id: string;
+	name: string;
+	options: MenuOption[];
 }
 
 export interface MenuItem {
@@ -23,6 +44,7 @@ export interface MenuItem {
 	dietaryTags: DietaryTag[];
 	imageUrl?: string;
 	popular: boolean;
+	optionGroups?: MenuOptionGroup[];
 }
 
 export type DietaryTag =
@@ -36,9 +58,38 @@ export type DietaryTag =
 	| "kosher";
 
 export interface CartItem {
+	lineId: string;
 	menuItem: MenuItem;
 	quantity: number;
+	selectedOptions: MenuOption[];
 	specialInstructions?: string;
+}
+
+export interface OrderTotals {
+	subtotal: number;
+	deliveryFee: number;
+	serviceFee: number;
+	tax: number;
+	total: number;
+}
+
+export type OrderStatus =
+	| "confirmed"
+	| "preparing"
+	| "on_the_way"
+	| "delivered";
+
+export interface Order {
+	id: string;
+	restaurantId: string;
+	restaurantName: string;
+	items: CartItem[];
+	totals: OrderTotals;
+	status: OrderStatus;
+	placedAt: number;
+	etaMinutes: number;
+	address: string;
+	courierName: string;
 }
 
 export type DeliveryPlatform =
