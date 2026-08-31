@@ -14,7 +14,7 @@ export default function Home() {
 	const activeItem = useAgentUIStore((s) => s.activeItem);
 
 	return (
-		<div className="flex h-[100dvh] flex-col overflow-hidden">
+		<div className="flex h-dvh flex-col overflow-hidden">
 			<TopBar
 				onOpenCart={() => setCartOpen(true)}
 				onOpenAgent={() => setAgentOpen(true)}
@@ -37,7 +37,7 @@ export default function Home() {
 				/>
 
 				<aside
-					className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col bg-surface shadow-2xl transition-transform duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)] lg:static lg:z-auto lg:w-[380px] lg:max-w-none lg:translate-x-0 lg:border-l lg:border-line lg:shadow-none ${
+					className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col bg-surface shadow-2xl transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] lg:static lg:z-auto lg:w-95 lg:max-w-none lg:translate-x-0 lg:border-l lg:border-line lg:shadow-none ${
 						agentOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
 					}`}
 				>

@@ -44,7 +44,7 @@ export function CartSidebar({
 				}`}
 			/>
 			<aside
-				className={`fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-sm flex-col bg-surface shadow-2xl transition-transform duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+				className={`fixed right-0 top-0 z-50 flex h-dvh w-full max-w-sm flex-col bg-surface shadow-2xl transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] ${
 					open ? "translate-x-0" : "translate-x-full"
 				}`}
 			>
@@ -58,7 +58,7 @@ export function CartSidebar({
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+						className="flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-ink/6 hover:text-ink"
 					>
 						<X className="h-5 w-5" strokeWidth={2} />
 					</button>
@@ -108,7 +108,7 @@ export function CartSidebar({
 											type="button"
 											aria-label="Decrease quantity"
 											onClick={() => updateQuantity(ci.lineId, ci.quantity - 1)}
-											className="flex h-6 w-6 items-center justify-center rounded-full transition-colors hover:bg-ink/[0.06]"
+											className="flex h-6 w-6 items-center justify-center rounded-full transition-colors hover:bg-ink/6"
 										>
 											<Minus className="h-3.5 w-3.5" strokeWidth={2} />
 										</button>
@@ -119,7 +119,7 @@ export function CartSidebar({
 											type="button"
 											aria-label="Increase quantity"
 											onClick={() => updateQuantity(ci.lineId, ci.quantity + 1)}
-											className="flex h-6 w-6 items-center justify-center rounded-full transition-colors hover:bg-ink/[0.06]"
+											className="flex h-6 w-6 items-center justify-center rounded-full transition-colors hover:bg-ink/6"
 										>
 											<Plus className="h-3.5 w-3.5" strokeWidth={2} />
 										</button>

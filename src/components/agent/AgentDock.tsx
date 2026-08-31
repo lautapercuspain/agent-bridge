@@ -75,11 +75,18 @@ export function AgentDock({ onClose }: { onClose?: () => void }) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		scrollRef.current?.scrollTo({
-			top: scrollRef.current.scrollHeight,
-			behavior: "smooth",
+		const el = scrollRef.current;
+		if (!el) return;
+		const observer = new MutationObserver(() => {
+			el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
 		});
-	}, [messages, voice.messages, activeTool, voice.activeTool]);
+		observer.observe(el, {
+			childList: true,
+			subtree: true,
+			characterData: true,
+		});
+		return () => observer.disconnect();
+	}, []);
 
 	function submit(text: string) {
 		const value = text.trim();
@@ -96,10 +103,7 @@ export function AgentDock({ onClose }: { onClose?: () => void }) {
 			<header className="flex items-center justify-between border-b border-line px-4 py-3.5">
 				<div className="flex items-center gap-2.5">
 					<span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-white">
-						<Sparkles
-							className="h-[18px] w-[18px] text-brand"
-							strokeWidth={2}
-						/>
+						<Sparkles className="h-4.5 w-4.5 text-brand" strokeWidth={2} />
 					</span>
 					<div>
 						<div className="flex items-center gap-1.5">
@@ -126,14 +130,14 @@ export function AgentDock({ onClose }: { onClose?: () => void }) {
 								: "text-ink hover:bg-brand-soft"
 						}`}
 					>
-						<Mic className="h-[18px] w-[18px]" strokeWidth={2} />
+						<Mic className="h-4.5 w-4.5" strokeWidth={2} />
 					</button>
 					{onClose && (
 						<button
 							type="button"
 							onClick={onClose}
 							aria-label="Close assistant"
-							className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-ink/[0.06] lg:hidden"
+							className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-ink/6 lg:hidden"
 						>
 							<X className="h-5 w-5" strokeWidth={2} />
 						</button>
@@ -147,9 +151,9 @@ export function AgentDock({ onClose }: { onClose?: () => void }) {
 						<span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-soft">
 							<Bot className="h-6 w-6 text-brand" strokeWidth={1.75} />
 						</span>
-						<p className="max-w-[15rem] text-sm text-muted">
-							Tell me what you're hungry for and I'll find it, build your cart,
-							and check out — all on AgentBridge.
+						<p className="max-w-60 text-sm text-muted">
+							Tell me what you&apos;re hungry for and I&apos;ll find it, build
+							your cart, and check out — all on AgentBridge.
 						</p>
 						<div className="mt-1 flex w-full flex-col gap-2">
 							{SUGGESTIONS.map((s) => (

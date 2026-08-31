@@ -41,7 +41,7 @@ export function RestaurantView() {
 				Back to restaurants
 			</button>
 
-			<div className="overflow-hidden rounded-[1.5rem] ring-1 ring-line">
+			<div className="overflow-hidden rounded-3xl ring-1 ring-line">
 				<FoodImage
 					src={restaurant.imageUrl}
 					alt={restaurant.name}

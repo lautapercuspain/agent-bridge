@@ -75,10 +75,7 @@ export function CheckoutView() {
 				<div className="space-y-4">
 					<section className="rounded-2xl border border-line bg-surface p-5">
 						<div className="flex items-center gap-2 font-semibold">
-							<MapPin
-								className="h-[18px] w-[18px] text-brand"
-								strokeWidth={2}
-							/>
+							<MapPin className="h-4.5 w-4.5 text-brand" strokeWidth={2} />
 							Delivery address
 						</div>
 						<input
@@ -90,10 +87,7 @@ export function CheckoutView() {
 
 					<section className="rounded-2xl border border-line bg-surface p-5">
 						<div className="flex items-center gap-2 font-semibold">
-							<CreditCard
-								className="h-[18px] w-[18px] text-brand"
-								strokeWidth={2}
-							/>
+							<CreditCard className="h-4.5 w-4.5 text-brand" strokeWidth={2} />
 							Payment
 						</div>
 						<div className="mt-3 flex items-center justify-between rounded-xl border border-line bg-cream px-4 py-3">

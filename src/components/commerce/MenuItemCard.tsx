@@ -49,7 +49,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
 						{item.dietaryTags.slice(0, 2).map((t) => (
 							<span
 								key={t}
-								className="rounded bg-ink/[0.05] px-1.5 py-0.5 text-[10px] font-medium capitalize text-muted"
+								className="rounded bg-ink/5 px-1.5 py-0.5 text-[10px] font-medium capitalize text-muted"
 							>
 								{t}
 							</span>

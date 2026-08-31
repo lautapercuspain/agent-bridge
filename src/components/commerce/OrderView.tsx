@@ -102,7 +102,7 @@ export function OrderView() {
 											} ${current ? "ring-4 ring-brand/20" : ""}`}
 										>
 											<Icon
-												className={`h-[18px] w-[18px] ${current ? "animate-pulse" : ""}`}
+												className={`h-4.5 w-4.5 ${current ? "animate-pulse" : ""}`}
 												strokeWidth={2}
 											/>
 										</span>

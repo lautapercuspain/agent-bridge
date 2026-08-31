@@ -25,7 +25,7 @@ export function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
 				<FoodImage
 					src={restaurant.imageUrl}
 					alt={restaurant.name}
-					className="aspect-[16/10] w-full object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.05]"
+					className="aspect-16/10 w-full object-cover transition-transform duration-600 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.05]"
 				/>
 				{restaurant.promo && (
 					<span className="absolute left-3 top-3 rounded-full bg-brand px-2.5 py-1 text-[11px] font-semibold text-white shadow-[0_6px_16px_-6px_rgba(255,90,44,0.8)]">
@@ -43,7 +43,7 @@ export function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
 				<h3 className="font-semibold leading-tight tracking-tight">
 					{restaurant.name}
 				</h3>
-				<span className="mt-0.5 flex shrink-0 items-center gap-1 rounded-full bg-ink/[0.06] px-2 py-0.5 text-xs font-semibold">
+				<span className="mt-0.5 flex shrink-0 items-center gap-1 rounded-full bg-ink/6 px-2 py-0.5 text-xs font-semibold">
 					<Star className="h-3 w-3 fill-brand text-brand" />
 					{restaurant.rating.toFixed(1)}
 				</span>

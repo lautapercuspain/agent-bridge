@@ -86,7 +86,7 @@ export function TopBar({
 					className="hidden shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink/80 transition-colors hover:border-ink/20 md:flex"
 				>
 					<MapPin className="h-4 w-4 text-brand" strokeWidth={2} />
-					<span className="max-w-[180px] truncate">{deliveryAddress}</span>
+					<span className="max-w-45 truncate">{deliveryAddress}</span>
 				</button>
 
 				<form onSubmit={onSearch} className="relative flex-1">
@@ -116,7 +116,7 @@ export function TopBar({
 					className="group flex shrink-0 items-center gap-2 rounded-full bg-ink px-3.5 py-2.5 text-sm font-semibold text-white transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-brand active:scale-[0.97] sm:px-4"
 				>
 					<span className="relative">
-						<ShoppingBag className="h-[18px] w-[18px]" strokeWidth={2} />
+						<ShoppingBag className="h-4.5 w-4.5" strokeWidth={2} />
 						{count > 0 && (
 							<span className="absolute -right-2.5 -top-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white ring-2 ring-ink transition-colors group-hover:bg-white group-hover:text-brand">
 								{count}

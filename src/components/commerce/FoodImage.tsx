@@ -17,7 +17,7 @@ export function FoodImage({
 	if (!src || failed) {
 		return (
 			<div
-				className={`flex items-center justify-center bg-gradient-to-br from-orange-100 via-rose-100 to-amber-100 text-brand/50 ${className ?? ""}`}
+				className={`flex items-center justify-center bg-linear-to-br from-orange-100 via-rose-100 to-amber-100 text-brand/50 ${className ?? ""}`}
 			>
 				<UtensilsCrossed className="h-8 w-8" strokeWidth={1.5} />
 			</div>

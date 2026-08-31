@@ -70,7 +70,7 @@ export function ItemModal() {
 						onClick={close}
 						className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 text-ink shadow-sm backdrop-blur transition-transform hover:scale-105 active:scale-95"
 					>
-						<X className="h-[18px] w-[18px]" strokeWidth={2} />
+						<X className="h-4.5 w-4.5" strokeWidth={2} />
 					</button>
 				</div>
 
@@ -126,7 +126,7 @@ export function ItemModal() {
 							type="button"
 							aria-label="Decrease quantity"
 							onClick={() => setQty((q) => Math.max(1, q - 1))}
-							className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-ink/[0.06]"
+							className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-ink/6"
 						>
 							<Minus className="h-4 w-4" strokeWidth={2} />
 						</button>
@@ -137,7 +137,7 @@ export function ItemModal() {
 							type="button"
 							aria-label="Increase quantity"
 							onClick={() => setQty((q) => q + 1)}
-							className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-ink/[0.06]"
+							className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-ink/6"
 						>
 							<Plus className="h-4 w-4" strokeWidth={2} />
 						</button>
