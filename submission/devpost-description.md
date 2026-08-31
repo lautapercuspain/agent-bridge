@@ -65,5 +65,5 @@ Food is the proof. The same pattern — publish your semantic actions, let any a
 ## Links
 
 - **Live demo:** https://agentbridge-delta.vercel.app
-- **Repository:** https://github.com/lautaro-kunaico/AgentBridge
+- **Repository:** https://github.com/lautapercuspain/agent-bridge
 </content>
