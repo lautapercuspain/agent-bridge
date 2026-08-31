@@ -10,7 +10,8 @@
     "lint": "eslint",
     "test:uber": "node scripts/test-uber-eats-auth.mjs",
     "demo:uber-order": "node scripts/simulate-uber-order.mjs",
-    "demo:record": "node scripts/record-demo.mjs"
+    "demo:record": "node scripts/record-demo.mjs",
+    "demo:gallery": "node scripts/capture-gallery.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.51",

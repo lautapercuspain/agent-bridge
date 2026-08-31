@@ -26,6 +26,7 @@
 
 # demo recording output
 /demo-recording
+/submission/gallery
 
 # debug
 npm-debug.log*
