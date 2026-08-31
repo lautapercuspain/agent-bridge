@@ -12,18 +12,26 @@ export function WebMCPProvider({ children }: { children: ReactNode }) {
 		initialized.current = true;
 
 		async function init() {
-			const { initializeWebMCPPolyfill } = await import(
-				"@mcp-b/webmcp-polyfill"
-			);
-			initializeWebMCPPolyfill();
+			// Defer to a native WebMCP implementation when present (e.g. an
+			// agentic browser); otherwise install the polyfill so any WebMCP
+			// client — or our own in-page agent — can discover the tools.
+			const nav = navigator as Navigator & {
+				modelContext?: typeof document.modelContext;
+			};
+			if (!nav.modelContext) {
+				const { initializeWebMCPPolyfill } = await import(
+					"@mcp-b/webmcp-polyfill"
+				);
+				initializeWebMCPPolyfill();
+			}
 
-			const tools = createToolDefinitions();
-
-			const ctx = document.modelContext;
+			const ctx = nav.modelContext ?? document.modelContext;
 			if (!ctx) {
-				console.warn("[AgentBridge] document.modelContext not available");
+				console.warn("[AgentBridge] WebMCP modelContext not available");
 				return;
 			}
+
+			const tools = createToolDefinitions();
 
 			for (const tool of Object.values(tools)) {
 				const controller = new AbortController();

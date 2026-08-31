@@ -1,111 +1,98 @@
 # AgentBridge — Demo Video Script
 
-**Target length:** 2–3 minutes
-**Format:** Screen recording + voiceover (optionally face cam in corner)
+**Target length:** under 3:00
+**Format:** Screen recording of the live app + voiceover (AI voiceover of this script is fine)
+**Live URL:** https://agentbridge-delta.vercel.app
+
+> The hero moment: an AI agent completes a **whole food order — including checkout —**
+> on AgentBridge, by calling the site's WebMCP tools. No scraping, no handoff.
 
 ---
 
 ## INTRO (0:00–0:15)
 
-**[SCREEN: Cover graphic or hero shot of AgentBridge]**
+**[SCREEN: The AgentBridge storefront — restaurants, categories, the assistant dock with the "WebMCP" badge.]**
 
 **VOICEOVER:**
-> "Online shopping was designed for humans. But what happens when an AI agent needs to shop for you? Today, agents rely on brittle browser automation and visual scraping. We built something better."
+> "This looks like a normal food-delivery app. But it was built for AI agents. Watch an agent order lunch for me — start to finish — without touching the screen."
 
 ---
 
 ## THE PROBLEM (0:15–0:35)
 
-**[SCREEN: Split-screen. Left: an agent struggling with a delivery app — clicking, scrolling, selectors breaking. Right: a simple chat bubble saying "Hey Agent, get me lunch."]**
+**[SCREEN: Split — left: an agent fighting a normal website, clicking, selectors breaking. Right: a single chat message "order me lunch".]**
 
 **VOICEOVER:**
-> "Imagine you want to order lunch. Normally, you'd open an app, scroll through restaurants, compare prices, customize your order, and check out. That's fine for a human — but for an AI agent, every click is a fragile automation step that can break at any time."
+> "Today, when an AI agent shops for you, it has to pretend to be a person — driving a browser, guessing at buttons, reading prices off pixels. It's slow and it breaks constantly. Shopping isn't really clicks. It's intentions: search, compare, add to cart, check out."
 
 ---
 
-## INTRODUCING AGENTBRIDGE (0:35–0:55)
+## THE IDEA — WEBMCP (0:35–0:55)
 
-**[SCREEN: AgentBridge logo + architecture diagram fading in]**
+**[SCREEN: Highlight the assistant dock's "WebMCP" badge; show a small overlay listing the tool names.]**
 
 **VOICEOVER:**
-> "AgentBridge is an agent-native commerce site. Instead of forcing agents to pretend to be humans, the page publishes its shopping actions as WebMCP tools — search restaurants, filter by diet and budget, compare options, build a shortlist, check out. Any WebMCP agent that opens the page can call them directly."
+> "AgentBridge publishes those intentions as WebMCP tools — right on the page. Eleven of them: search restaurants, open a menu, add to cart, start checkout, place the order, track it. Any WebMCP-capable agent that opens the page can call them directly."
 
 ---
 
 ## LIVE DEMO (0:55–2:05)
 
-**[SCREEN: The live app at agentbridge-delta.vercel.app. Show the registered WebMCP tools (tool panel / activity indicator), then start the voice or text agent.]**
+**[SCREEN: A WebMCP browser (ChatGPT's in-app browser, or Chrome with the WebMCP/MCP-B extension) on the live URL. If demoing the built-in agent instead, use the assistant dock — it calls the exact same tools.]**
 
-### Part 1 — The Request (0:55–1:10)
+### The request (0:55–1:10)
 
-**USER (speaking or typing):**
-> "Get me a healthy lunch under twenty dollars, delivered."
+**USER (typed or spoken to the agent):**
+> "Order me two double smash burgers and check out."
 
-**AGENT (conversational, concise):**
-> "On it — finding healthy spots near you under twenty dollars."
+**AGENT (in the dock, concise):**
+> "On it — finding a great burger spot."
 
-### Part 2 — The agent calls WebMCP tools (1:10–1:40)
+### The agent works (1:10–1:45)
 
-**[SCREEN: Highlight tool activity as it happens — `search-restaurants`, then `get-restaurant-menu`, then `filter-menu-items` and `compare-options`. As each tool runs, the UI updates live: real restaurants populate, a menu opens, a shortlist fills in.]**
+**[SCREEN: Narrate the tool calls as the storefront updates LIVE — restaurants filter to burgers (search-restaurants), Char & Cheese opens (get-restaurant-menu), two Double Smash Burgers land in the cart (add-to-cart), the checkout screen appears (start-checkout).]**
 
 **VOICEOVER:**
-> "Everything you're seeing is driven by WebMCP. The agent isn't scraping the screen — it's calling the site's own tools: search-restaurants, get-restaurant-menu, filter, compare. Because the tools and the UI share the same state, I can watch it work and step in anytime. The restaurants are real, from Yelp; the prices are clearly labeled estimates for planning."
+> "Everything you're seeing is the agent calling AgentBridge's WebMCP tools. It's not scraping — it's driving the site's real capabilities. And because the tools and the UI share one state, I'm watching it happen and I can step in at any point."
 
-**AGENT presents options:**
-> "The Aloha Poke Bowl is the best fit — strong reviews and in budget. I've added it to your shortlist."
+### Human approval + checkout (1:45–2:05)
 
-### Part 3 — Human approval and an honest handoff (1:40–2:05)
-
-**USER:**
-> "Perfect, let's order it."
+**[SCREEN: The order confirmation appears — order number, ETA, courier — and the live status tracker starts: Confirmed → Preparing → On the way → Delivered.]**
 
 **AGENT:**
-> "Great — I'll hand you to your delivery app to confirm the live price and pay."
-
-**[SCREEN: `checkout-on-platform` fires; the shortlist opens with "Order on Uber Eats / Rappi / PedidosYa" buttons for the user's country; clicking one deep-links into the real delivery app.]**
+> "Your order's in — two Double Smash Burgers from Char & Cheese, about twenty minutes out."
 
 **VOICEOVER:**
-> "Here's the honest part. No delivery marketplace exposes a public consumer ordering API — so AgentBridge doesn't fake an order or invent an ETA. WebMCP handles discovery and the decision; you complete payment in your own app, where prices and availability are real."
-
-### Recap (2:05–2:15)
-
-**[SCREEN: Quick diagram — You → Agent → WebMCP tools on the page → your delivery app.]**
-
-**VOICEOVER:**
-> "One conversation. The agent understood intent, called the site's WebMCP tools to discover and compare real options, and handed off for your final approval. No brittle automation. No apps to dig through. No friction."
+> "That's the whole thing. The agent searched, chose, built the cart, and completed checkout — on AgentBridge itself. I just said what I wanted and gave the go-ahead."
 
 ---
 
-## WHY IT MATTERS (2:10–2:30)
+## WHY IT MATTERS (2:05–2:35)
 
-**[SCREEN: "Why WebMCP Matters" slide]**
+**[SCREEN: "Why WebMCP" slide — three short lines.]**
 
 **VOICEOVER:**
-> "This is why WebMCP matters. Commerce is a set of semantic actions, not a screen to scrape. When a site publishes those actions as tools, agents interact reliably — nothing breaks when the page is restyled — the site keeps control of correctness and safety, and the human stays in the loop at the moment that counts. It's a commerce layer built for agents and people at the same time."
+> "This is why WebMCP matters. Commerce is a set of semantic actions, not a screen to scrape — so the site hands agents typed tools that never break when we restyle the page. The site keeps control of correctness and the human stays in the loop at the moment of purchase. And the agent and I work on the same screen, together. It's a store that's natively ready for agents."
 
 ---
 
-## CLOSING (2:30–2:50)
+## CLOSE (2:35–2:50)
 
-**[SCREEN: Vision slide with roadmap — food, groceries, retail, travel, services]**
-
-**VOICEOVER:**
-> "We started with food ordering, but our vision is broader. AgentBridge is infrastructure for agent-native commerce — any category, any store. Humans describe what they want. AI agents handle the rest."
-
-**[SCREEN: Logo + team name + "Built for WebMCP Hackathon"]**
+**[SCREEN: Logo + tagline + "Built on WebMCP".]**
 
 **VOICEOVER:**
-> "This is AgentBridge. Making online commerce ready for AI agents."
+> "We started with food. The same pattern works for groceries, retail, travel — any store. This is AgentBridge: commerce built for agents and people at the same time."
 
 ---
 
 ## PRODUCTION NOTES
 
-- **Music:** Low-key ambient/electronic. Something modern and clean — not dramatic.
-- **Transitions:** Simple cuts or cross-fades. Avoid flashy motion graphics.
-- **Key moments to emphasize:** The simplicity of the voice interaction, the MCP layer calls (show them on screen briefly), and the human approval step.
-- **Suggested tools:** OBS or Screen Studio for recording, Descript or CapCut for editing.
-- **Thumbnail:** Use the cover graphic (01-cover.svg exported to PNG).
-- **Live URL to show on camera:** https://agentbridge-delta.vercel.app — open it fresh, show the WebMCP tools registered, then run the flow end to end.
-- **Accuracy on camera:** say that menu prices are estimates for planning and that the real order is completed in the user's delivery app. Judges reward honesty about the handoff.
-- **Eligibility (do not skip):** upload to YouTube as **Public** (not Unlisted/Private), keep it **under 3:00**, and ensure it has **audio narration** about the project. An AI voiceover of this script is allowed.
+- **Recording env (pick one):**
+  - **Chrome + WebMCP/MCP-B extension** (recommended, most reliable): install the extension, open the live URL, use the extension's agent to run the prompt. This proves an *external* agent driving our tools.
+  - **ChatGPT in-app browser** if it exposes WebMCP.
+  - **Built-in assistant dock** as a fallback — it calls the exact same registered WebMCP tools, so the flow is identical on camera.
+- **Show the tools are real:** briefly open dev console and run `await navigator.modelContext.getTools()` to reveal the 11 tools. Great B-roll for judges.
+- **Say what's simulated:** checkout and delivery tracking are simulated first-party (this is a demo marketplace) — no real payment. Judges reward honesty.
+- **Eligibility (do not skip):** upload to YouTube as **Public** (not Unlisted/Private), keep it **under 3:00**, with **audio narration**. AI voiceover of this script is allowed.
+- **Tools:** Screen Studio or OBS to record; Descript or CapCut to edit. Keep cuts simple.
+</content>
