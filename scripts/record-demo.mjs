@@ -1,18 +1,28 @@
 #!/usr/bin/env node
-// Automated, annotated demo recording of AgentBridge.
+// Automated, annotated, NARRATED demo recording of AgentBridge.
 //
 // Drives the site's REAL WebMCP tools via navigator.modelContext.executeTool
-// (the exact path an external agent uses) while overlaying captions, and
-// records the whole thing to a video with Playwright.
+// (the exact path an external agent uses) with on-screen captions, records the
+// run to video, generates a TTS voiceover (OpenAI) timed to the visuals, and
+// muxes it into a single narrated MP4.
 //
 // Usage:
-//   node scripts/record-demo.mjs [url] [--headed]
+//   node scripts/record-demo.mjs [url] [--headed] [--no-audio]
 //   DEMO_URL=http://localhost:3000 node scripts/record-demo.mjs
 //
-// Output: demo-recording/agentbridge-demo.webm (+ .mp4 if ffmpeg is available)
+// Output:
+//   demo-recording/agentbridge-demo.mp4           (silent)
+//   demo-recording/agentbridge-demo-narrated.mp4  (with voiceover, if a key is set)
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	renameSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
@@ -21,9 +31,61 @@ const URL =
 	process.env.DEMO_URL ??
 	"https://agentbridge-delta.vercel.app";
 const HEADED = process.argv.includes("--headed");
+const NO_AUDIO = process.argv.includes("--no-audio");
 const OUT_DIR = "demo-recording";
+const AUDIO_DIR = join(OUT_DIR, "audio");
 const W = 1440;
 const H = 900;
+const PAD = 0.7; // trailing silence after each narration line (s)
+const MIN_BEAT = 1.8; // minimum on-screen time per beat (s)
+
+// Each beat: an optional title card OR caption chip, an optional action
+// (type into the dock, or call a WebMCP tool), and the narration line.
+const BEATS = [
+	{
+		title: ["Agent<b>Bridge</b>", "A food marketplace built for AI agents"],
+		say: "This looks like a normal food delivery app. But it was built for AI agents.",
+	},
+	{
+		cap: ["You", "\u201cOrder two double smash burgers and check out.\u201d"],
+		fill: "Order two double smash burgers and check out.",
+		say: "I ask the agent to order two double smash burgers and check out.",
+	},
+	{
+		cap: ["Agent calls", "Searching restaurants", "search-restaurants"],
+		tool: ["search-restaurants", { category: "burgers" }],
+		say: "The agent calls the site's Web M C P tools. First, it searches for burgers.",
+	},
+	{
+		cap: ["Agent calls", "Opening the menu", "get-restaurant-menu"],
+		tool: ["get-restaurant-menu", { restaurantId: "char-and-cheese" }],
+		say: "It opens the top-rated burger spot and pulls up the menu.",
+	},
+	{
+		cap: ["Agent calls", "Adding 2 to cart", "add-to-cart"],
+		tool: ["add-to-cart", { itemId: "char-and-cheese-0", quantity: 2 }],
+		say: "It adds two double smash burgers to the cart.",
+	},
+	{
+		cap: ["Agent calls", "Starting checkout", "start-checkout"],
+		tool: ["start-checkout", {}],
+		say: "Then it starts checkout. Every step is a structured tool call — no scraping.",
+	},
+	{
+		cap: ["You approve \u2192", "Placing the order", "place-order"],
+		tool: ["place-order", {}],
+		say: "I give the go-ahead, and the agent places the order.",
+	},
+	{
+		cap: ["Done", "The agent completed checkout \u2014 end to end."],
+		extra: 2500,
+		say: "Done. The agent completed the entire order — checkout included — on AgentBridge itself.",
+	},
+	{
+		title: ["Built on <b>WebMCP</b>", "Agents and people, on the same page."],
+		say: "This is commerce built for agents and people, on the same page. Built on Web M C P.",
+	},
+];
 
 const ANNOTATION_JS = `
 (() => {
@@ -72,9 +134,81 @@ const ANNOTATION_JS = `
 })();
 `;
 
+function apiKey() {
+	if (process.env.OPENAI_API_KEY) return process.env.OPENAI_API_KEY;
+	try {
+		for (const line of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
+			const m = line.match(/^\s*OPENAI_API_KEY\s*=\s*(.+?)\s*$/);
+			if (m) return m[1];
+		}
+	} catch {}
+	return null;
+}
+
+const ff = (args) => execFileSync("ffmpeg", ["-y", ...args], { stdio: "ignore" });
+function probeDuration(file) {
+	const out = execFileSync("ffprobe", [
+		"-v", "error", "-show_entries", "format=duration",
+		"-of", "default=nw=1:nk=1", file,
+	]).toString().trim();
+	return Number.parseFloat(out) || 0;
+}
+
+async function synthesize(key) {
+	mkdirSync(AUDIO_DIR, { recursive: true });
+	const clips = [];
+	for (let i = 0; i < BEATS.length; i++) {
+		const text = BEATS[i].say;
+		const mp3 = join(AUDIO_DIR, `line_${i}.mp3`);
+		const wav = join(AUDIO_DIR, `line_${i}.wav`);
+		const attempts = [
+			{ model: "gpt-4o-mini-tts", voice: "ash", instructions: "Warm, confident, concise product-demo narration." },
+			{ model: "tts-1", voice: "alloy" },
+		];
+		let ok = false;
+		for (const a of attempts) {
+			const res = await fetch("https://api.openai.com/v1/audio/speech", {
+				method: "POST",
+				headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+				body: JSON.stringify({ ...a, input: text, response_format: "mp3" }),
+			});
+			if (res.ok) {
+				writeFileSync(mp3, Buffer.from(await res.arrayBuffer()));
+				ok = true;
+				break;
+			}
+		}
+		if (!ok) throw new Error(`TTS failed for line ${i}`);
+		ff(["-i", mp3, "-ar", "24000", "-ac", "1", wav]);
+		clips.push({ wav, dur: probeDuration(wav) });
+		console.log(`  narration ${i + 1}/${BEATS.length} (${clips[i].dur.toFixed(1)}s)`);
+	}
+	return clips;
+}
+
 async function main() {
 	if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true });
 	mkdirSync(OUT_DIR, { recursive: true });
+
+	const key = NO_AUDIO ? null : apiKey();
+	let clips = null;
+	if (key) {
+		console.log("Generating narration (OpenAI TTS)…");
+		try {
+			clips = await synthesize(key);
+		} catch (e) {
+			console.warn(`Narration failed (${e.message}) — recording silent.`);
+			clips = null;
+		}
+	} else {
+		console.log("No OPENAI_API_KEY / --no-audio → recording without narration.");
+	}
+
+	// Per-beat on-screen duration (seconds).
+	const beatSecs = BEATS.map((b, i) => {
+		const base = clips ? Math.max(clips[i].dur, MIN_BEAT) : 2.9;
+		return base + PAD + (b.extra ?? 0) / 1000;
+	});
 
 	const browser = await chromium.launch({ headless: !HEADED });
 	const context = await browser.newContext({
@@ -83,11 +217,10 @@ async function main() {
 		recordVideo: { dir: OUT_DIR, size: { width: W, height: H } },
 	});
 	const page = await context.newPage();
+	const recStart = Date.now();
 
 	console.log(`Recording ${URL} …`);
 	await page.goto(URL, { waitUntil: "load" });
-
-	// Wait until WebMCP tools are registered and the storefront has painted.
 	await page
 		.waitForFunction(
 			async () => {
@@ -102,15 +235,10 @@ async function main() {
 
 	const wait = (ms) => page.waitForTimeout(ms);
 	const caption = (lbl, sub, tool) =>
-		page.evaluate((a) => window.__demo.caption(a.lbl, a.sub, a.tool), {
-			lbl,
-			sub,
-			tool,
-		});
+		page.evaluate((a) => window.__demo.caption(a.lbl, a.sub, a.tool), { lbl, sub, tool });
 	const title = (t, sub) =>
 		page.evaluate((a) => window.__demo.title(a.t, a.sub), { t, sub });
-	const clear = () => page.evaluate(() => window.__demo.clear());
-	const runTool = (name, args = {}) =>
+	const runTool = (name, args) =>
 		page.evaluate(
 			async (a) => {
 				const mc = navigator.modelContext;
@@ -121,82 +249,59 @@ async function main() {
 			{ name, args },
 		);
 
-	// --- Sequence -----------------------------------------------------------
-	await title("Agent<b>Bridge</b>", "A food marketplace built for AI agents");
-	await wait(3000);
-	await clear();
-	await wait(500);
-
-	await caption("You", "“Order two double smash burgers and check out.”");
-	await page
-		.fill(
-			'input[placeholder*="Ask for food"]',
-			"Order two double smash burgers and check out.",
-		)
-		.catch(() => {});
-	await wait(2800);
-
-	await caption("Agent calls", "Searching restaurants", "search-restaurants");
-	await runTool("search-restaurants", { category: "burgers" });
-	await wait(2700);
-
-	await caption("Agent calls", "Opening the menu", "get-restaurant-menu");
-	await runTool("get-restaurant-menu", { restaurantId: "char-and-cheese" });
-	await wait(2700);
-
-	await caption("Agent calls", "Adding 2 to cart", "add-to-cart");
-	await runTool("add-to-cart", { itemId: "char-and-cheese-0", quantity: 2 });
-	await wait(2500);
-
-	await caption("Agent calls", "Starting checkout", "start-checkout");
-	await runTool("start-checkout", {});
-	await wait(2700);
-
-	await caption("You approve →", "Placing the order", "place-order");
-	await runTool("place-order", {});
-	await wait(3200);
-
-	await caption(
-		"Done",
-		"The agent completed checkout — no scraping, no handoff.",
-	);
-	await wait(5200);
-
-	await title("Built on <b>WebMCP</b>", "Agents and people, on the same page.");
-	await wait(3500);
-	// -----------------------------------------------------------------------
+	const beatStart = [];
+	await wait(300);
+	for (let i = 0; i < BEATS.length; i++) {
+		const b = BEATS[i];
+		beatStart[i] = (Date.now() - recStart) / 1000;
+		if (b.title) await title(b.title[0], b.title[1]);
+		else if (b.cap) await caption(b.cap[0], b.cap[1], b.cap[2]);
+		if (b.fill)
+			await page.fill('input[placeholder*="Ask for food"]', b.fill).catch(() => {});
+		if (b.tool) await runTool(b.tool[0], b.tool[1]);
+		await wait(beatSecs[i] * 1000);
+	}
+	const videoLen = (Date.now() - recStart) / 1000;
 
 	const video = page.video();
 	await context.close();
 	await browser.close();
 
-	if (!video) {
-		console.error("No video captured.");
-		return;
-	}
-	const raw = await video.path();
+	const rawWebm = video ? await video.path() : null;
 	const webm = join(OUT_DIR, "agentbridge-demo.webm");
-	renameSync(raw, webm);
-	console.log(`Saved ${webm}`);
+	if (rawWebm) renameSync(rawWebm, webm);
 
-	// Best-effort convert to mp4 for easy sharing/upload.
-	try {
-		const mp4 = join(OUT_DIR, "agentbridge-demo.mp4");
-		execFileSync(
-			"ffmpeg",
-			["-y", "-i", webm, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", mp4],
-			{ stdio: "ignore" },
+	const silentMp4 = join(OUT_DIR, "agentbridge-demo.mp4");
+	ff(["-i", webm, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", silentMp4]);
+	console.log(`Saved ${silentMp4}`);
+
+	if (clips) {
+		// Place each narration line at the exact time its beat appeared, then
+		// pad to the video length — so audio and visuals stay in sync.
+		const narration = join(AUDIO_DIR, "narration.wav");
+		const args = [];
+		for (const c of clips) args.push("-i", c.wav);
+		const chains = clips
+			.map((_, i) => {
+				const d = Math.round(beatStart[i] * 1000);
+				return `[${i}:a]adelay=${d}|${d}[a${i}]`;
+			})
+			.join(";");
+		const mix = `${clips.map((_, i) => `[a${i}]`).join("")}amix=inputs=${clips.length}:normalize=0[m];[m]apad[a]`;
+		args.push(
+			"-filter_complex", `${chains};${mix}`,
+			"-map", "[a]", "-t", videoLen.toFixed(3), narration,
 		);
-		console.log(`Saved ${mp4}`);
-	} catch {
-		console.log("ffmpeg not available — keeping .webm only.");
-	}
+		ff(args);
 
-	// Clean up any stray video files Playwright may have left.
-	for (const f of readdirSync(OUT_DIR)) {
-		if (f.endsWith(".webm") && f !== "agentbridge-demo.webm") {
-			rmSync(join(OUT_DIR, f), { force: true });
-		}
+		const narratedMp4 = join(OUT_DIR, "agentbridge-demo-narrated.mp4");
+		ff([
+			"-i", webm, "-i", narration,
+			"-c:v", "libx264", "-pix_fmt", "yuv420p",
+			"-c:a", "aac", "-b:a", "160k",
+			"-movflags", "+faststart", "-shortest", narratedMp4,
+		]);
+		console.log(`Saved ${narratedMp4}  ← narrated, ready to upload`);
 	}
 }
 
