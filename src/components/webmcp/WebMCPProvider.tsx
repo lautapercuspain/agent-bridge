@@ -15,17 +15,16 @@ export function WebMCPProvider({ children }: { children: ReactNode }) {
 			// Defer to a native WebMCP implementation when present (e.g. an
 			// agentic browser); otherwise install the polyfill so any WebMCP
 			// client — or our own in-page agent — can discover the tools.
-			const nav = navigator as Navigator & {
-				modelContext?: typeof document.modelContext;
-			};
-			if (!nav.modelContext) {
+			// Use document.modelContext (the current spec location); reading
+			// navigator.modelContext emits a deprecation warning in Chrome.
+			if (!document.modelContext) {
 				const { initializeWebMCPPolyfill } = await import(
 					"@mcp-b/webmcp-polyfill"
 				);
 				initializeWebMCPPolyfill();
 			}
 
-			const ctx = nav.modelContext ?? document.modelContext;
+			const ctx = document.modelContext;
 			if (!ctx) {
 				console.warn("[AgentBridge] WebMCP modelContext not available");
 				return;

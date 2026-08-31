@@ -1,15 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getModelContext, toSchemaObject } from "@/lib/model-context";
 import type { VoiceState } from "@/types";
-
-type ExecutableModelContext = {
-	getTools: NonNullable<typeof document.modelContext>["getTools"];
-	executeTool?: (
-		tool: WebMCP.RegisteredTool,
-		inputArguments: string,
-	) => Promise<string | null>;
-};
 
 export function useVoiceAgent() {
 	const [state, setState] = useState<VoiceState>({
@@ -52,7 +45,7 @@ export function useVoiceAgent() {
 
 	const executeToolCall = useCallback(
 		async (callId: string, name: string, argsJson: string) => {
-			const ctx = document.modelContext as ExecutableModelContext | undefined;
+			const ctx = getModelContext();
 			const tool = toolsRef.current.find((t) => t.name === name);
 			let output = JSON.stringify({ error: "Tool unavailable" });
 
@@ -152,7 +145,7 @@ export function useVoiceAgent() {
 		try {
 			setError(null);
 
-			const ctx = document.modelContext as ExecutableModelContext | undefined;
+			const ctx = getModelContext();
 			toolsRef.current = ctx ? await ctx.getTools() : [];
 
 			const pc = new RTCPeerConnection();
@@ -198,10 +191,7 @@ export function useVoiceAgent() {
 									type: "function",
 									name: t.name,
 									description: t.description,
-									parameters: t.inputSchema ?? {
-										type: "object",
-										properties: {},
-									},
+									parameters: toSchemaObject(t.inputSchema),
 								})),
 								tool_choice: "auto",
 							},

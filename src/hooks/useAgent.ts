@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { getModelContext, toSchemaObject } from "@/lib/model-context";
 import type { ChatMessage } from "@/types";
 
 interface ToolCall {
@@ -13,16 +14,6 @@ interface ToolCall {
 type ModelMessage = {
 	role: "system" | "user" | "assistant" | "tool";
 	content: unknown;
-};
-
-// executeTool() is a Chromium extension not present in the standard
-// document.modelContext type, so we narrow to the members we use.
-type ExecutableModelContext = {
-	getTools: NonNullable<typeof document.modelContext>["getTools"];
-	executeTool?: (
-		tool: WebMCP.RegisteredTool,
-		inputArguments: string,
-	) => Promise<string | null>;
 };
 
 const MAX_TURNS = 12;
@@ -41,12 +32,12 @@ export function useAgent() {
 	const modelMessagesRef = useRef<ModelMessage[]>([]);
 
 	const runAgentLoop = useCallback(async () => {
-		const ctx = document.modelContext as ExecutableModelContext | undefined;
+		const ctx = getModelContext();
 		const registered = ctx ? await ctx.getTools() : [];
 		const toolDefs = registered.map((t) => ({
 			name: t.name,
 			description: t.description,
-			inputSchema: t.inputSchema,
+			inputSchema: toSchemaObject(t.inputSchema),
 		}));
 
 		for (let turn = 0; turn < MAX_TURNS; turn++) {

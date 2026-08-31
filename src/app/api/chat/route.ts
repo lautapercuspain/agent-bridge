@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { generateText, jsonSchema, tool } from "ai";
+import { toSchemaObject } from "@/lib/model-context";
 
 const SYSTEM_PROMPT = `You are AgentBridge, an autonomous food-ordering concierge that operates ITS OWN delivery marketplace. You can complete the entire order yourself — browse, build the cart, and check out — with no external app or handoff.
 
@@ -20,7 +21,9 @@ Core operating principles:
 5. HUMAN IN THE LOOP AT CHECKOUT. Before place-order, summarize the cart and total and get a quick yes. If the user already said to order/checkout, call start-checkout then place-order.
 6. AFTER ORDERING. Confirm the order id and ETA, and offer to track it with get-order-status.
 
-Style: warm, concise, confident. This is often voice, so keep replies short. State any substitution in one sentence. Never use emojis. Prices are real AgentBridge prices in USD.`;
+Style: warm, concise, confident. This is often voice, so keep replies short. State any substitution in one sentence. Never use emojis. Prices are real AgentBridge prices in USD.
+
+Language: Detect the language of the user's message and ALWAYS reply in that same language. If they write in Arabic, reply in Arabic; if Spanish, reply in Spanish, and so on. If the user switches languages, switch with them.`;
 
 interface ToolDef {
 	name: string;
@@ -38,9 +41,7 @@ export async function POST(request: Request) {
 			// which runs them through document.modelContext.executeTool().
 			tool({
 				description: t.description,
-				inputSchema: jsonSchema(
-					t.inputSchema ?? { type: "object", properties: {} },
-				),
+				inputSchema: jsonSchema(toSchemaObject(t.inputSchema)),
 			}),
 		]),
 	);
