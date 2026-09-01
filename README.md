@@ -35,6 +35,27 @@ We started with food ordering, but the concept applies everywhere: groceries, re
 
 AgentBridge is built on [WebMCP](https://webmcp.org), an emerging standard that makes the web agent-friendly by giving AI models structured access to website capabilities.
 
+## Testing WebMCP
+
+AgentBridge implements the W3C WebMCP browser API through `document.modelContext`. This is different from products named "Web MCP" that expose generic browser automation, scraping, screenshots, or clicking through a backend MCP server.
+
+Start AgentBridge, then run the end-to-end WebMCP test in another terminal:
+
+```bash
+npm run dev
+npm run test:webmcp
+```
+
+The test reproduces "Find me a burger for one person, with a total budget of up to USD $20." It discovers all registered tools, searches burger restaurants, selects an item, verifies the final total including fees and tax, requests a checkout URL, and confirms that a fresh browser page restores the order for human review.
+
+To test a deployment instead of localhost:
+
+```bash
+npm run test:webmcp -- https://agentbridge-delta.vercel.app
+```
+
+This automated test validates the website's WebMCP implementation using the included polyfill. To validate native agent integration, use a current client listed in the WebMCP [implementation status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md), open the deployed AgentBridge page in that client's browser context, and make the same request. ChatGPT Desktop is listed as supported; the standard chatgpt.com browser session is not listed separately.
+
 ---
 
 *Built for the WebMCP Hackathon.*

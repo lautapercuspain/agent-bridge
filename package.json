@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:webmcp": "node scripts/test-webmcp.mjs",
     "test:uber": "node scripts/test-uber-eats-auth.mjs",
     "demo:uber-order": "node scripts/simulate-uber-order.mjs",
     "demo:record": "node scripts/record-demo.mjs",
