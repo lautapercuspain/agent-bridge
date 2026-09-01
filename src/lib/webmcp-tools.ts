@@ -156,8 +156,9 @@ export function createToolDefinitions() {
 	return {
 		"list-categories": {
 			name: "list-categories",
+			title: "List food categories",
 			description:
-				"List all food categories available on AgentBridge (e.g. breakfast, burgers, sushi, indian, mediterranean). Use this to discover what the user can browse.",
+				"Discover available food categories such as burgers, pizza, sushi, Indian, and breakfast. Use when the user wants ideas or has not named a cuisine; otherwise call search-restaurants directly.",
 			inputSchema: { type: "object", properties: {} },
 			annotations: { readOnlyHint: true, untrustedContentHint: false },
 			execute: async () =>
@@ -168,8 +169,9 @@ export function createToolDefinitions() {
 
 		"search-restaurants": {
 			name: "search-restaurants",
+			title: "Search restaurants",
 			description:
-				"Search AgentBridge restaurants by category, cuisine, or free-text query, with optional filters. Returns matching restaurants with ratings, price, ETA, and delivery fee. Updates the storefront so the user sees the results.",
+				"Find restaurants matching a food, cuisine, or category. Start here for requests like 'find me a burger for one person under $20' by using category 'burgers' or query 'burger'. Returns restaurant ids, ratings, price level, ETA, delivery fee, and offers. Next call get-restaurant-menu. Price level is not the final order total.",
 			inputSchema: {
 				type: "object",
 				properties: {
@@ -273,8 +275,9 @@ export function createToolDefinitions() {
 
 		"get-restaurant-menu": {
 			name: "get-restaurant-menu",
+			title: "Get restaurant menu",
 			description:
-				"Open a restaurant and get its full menu. Pass the restaurant 'id' from search results (a name also works). Returns menu items with ids, prices, sections, and dietary tags, and shows the restaurant to the user.",
+				"Get the full menu for a restaurant returned by search-restaurants. Returns item ids, prices, descriptions, sections, and dietary tags. Select suitable items from this result, then use get-cart to verify a total budget because fees and tax are added at checkout.",
 			inputSchema: {
 				type: "object",
 				properties: {
@@ -317,8 +320,9 @@ export function createToolDefinitions() {
 
 		"filter-menu-items": {
 			name: "filter-menu-items",
+			title: "Filter menu items",
 			description:
-				"Filter the current restaurant's menu by dietary tags, maximum price, section, or a search query.",
+				"Narrow the current menu by food name, dietary needs, section, or maximum item price. maxPrice applies per item, not to the full order. To satisfy a total budget, add a candidate and check the final total with get-cart.",
 			inputSchema: {
 				type: "object",
 				properties: {
@@ -400,8 +404,9 @@ export function createToolDefinitions() {
 
 		"add-to-cart": {
 			name: "add-to-cart",
+			title: "Add item to cart",
 			description:
-				"Add a menu item to the cart. Pass the item 'id' from the menu (a name also works), an optional quantity, and optional option ids for size/extras.",
+				"Add a menu item using its item id, quantity, and optional size or extra option ids. Returns the updated cart and complete totals. For budget requests, inspect the returned total and adjust the cart if it exceeds the user's limit.",
 			inputSchema: {
 				type: "object",
 				properties: {
@@ -454,7 +459,9 @@ export function createToolDefinitions() {
 
 		"remove-from-cart": {
 			name: "remove-from-cart",
-			description: "Remove an item from the cart. Pass the item id or name.",
+			title: "Remove item from cart",
+			description:
+				"Remove an item from the cart by item id or name. Use to correct a selection or bring an order within budget. Returns the updated cart and totals.",
 			inputSchema: {
 				type: "object",
 				properties: {
@@ -477,8 +484,9 @@ export function createToolDefinitions() {
 
 		"update-cart-item": {
 			name: "update-cart-item",
+			title: "Update cart quantity",
 			description:
-				"Set the quantity of an item already in the cart. Pass the item id or name and the new quantity (0 removes it).",
+				"Set the quantity of an item already in the cart using its item id or name. Quantity 0 removes it. Returns recalculated totals for portion or budget adjustments.",
 			inputSchema: {
 				type: "object",
 				properties: {
@@ -496,8 +504,9 @@ export function createToolDefinitions() {
 
 		"get-cart": {
 			name: "get-cart",
+			title: "Review cart and total",
 			description:
-				"Get the current cart: items, quantities, and the full price breakdown (subtotal, delivery, service fee, tax, total).",
+				"Get the current cart and authoritative checkout price, including subtotal, delivery fee, service fee, tax, and final total in USD. Always use this to verify a total budget; menu prices alone exclude fees and tax.",
 			inputSchema: { type: "object", properties: {} },
 			annotations: { readOnlyHint: true, untrustedContentHint: false },
 			execute: async () => text(cartSummary()),
@@ -505,8 +514,9 @@ export function createToolDefinitions() {
 
 		"start-checkout": {
 			name: "start-checkout",
+			title: "Prepare checkout for review",
 			description:
-				"Prepare a human-review checkout URL for the current cart and delivery address. Return this URL to an external agent or person; opening it restores the order on AgentBridge, where a human can review or place it.",
+				"Prepare the current cart for human review without placing it. Returns an absolute checkoutUrl that must be shown to the user. Opening it restores the items and recalculates prices so a human can review, edit the delivery address, and choose whether to press Place Order.",
 			inputSchema: { type: "object", properties: {} },
 			annotations: { readOnlyHint: false, untrustedContentHint: false },
 			execute: async () => {
@@ -536,8 +546,9 @@ export function createToolDefinitions() {
 
 		"place-order": {
 			name: "place-order",
+			title: "Place approved order",
 			description:
-				"Place the order on AgentBridge and complete checkout. Confirms the order, clears the cart, and shows live order tracking. Use this once the user has approved the order.",
+				"Place the current simulated order, clear the cart, and begin tracking. This changes state and must only be called after explicit user approval. For external-agent handoff or review-only requests, call start-checkout and return its checkoutUrl instead.",
 			inputSchema: { type: "object", properties: {} },
 			annotations: { readOnlyHint: false, untrustedContentHint: false },
 			execute: async () => {
@@ -576,8 +587,9 @@ export function createToolDefinitions() {
 
 		"get-order-status": {
 			name: "get-order-status",
+			title: "Get order status",
 			description:
-				"Check the status of the current order (confirmed, preparing, on the way, or delivered) and its ETA.",
+				"Check the latest status and ETA of the current placed order. Use after place-order; this does not inspect an unplaced checkout cart.",
 			inputSchema: { type: "object", properties: {} },
 			annotations: { readOnlyHint: true, untrustedContentHint: false },
 			execute: async () => {

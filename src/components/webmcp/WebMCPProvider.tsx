@@ -40,6 +40,7 @@ export function WebMCPProvider({ children }: { children: ReactNode }) {
 					await ctx.registerTool(
 						{
 							name: tool.name,
+							title: tool.title,
 							description: tool.description,
 							inputSchema: tool.inputSchema,
 							annotations: tool.annotations,
