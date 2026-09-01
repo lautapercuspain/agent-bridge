@@ -1,8 +1,11 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { queryRestaurants } from "@/lib/catalog";
+import { parseCheckoutLink } from "@/lib/checkout-link";
 import { useAgentUIStore } from "@/lib/webmcp-tools";
+import { useCartStore } from "@/stores/cart-store";
 import { CategoryRail } from "./CategoryRail";
 import { CheckoutView } from "./CheckoutView";
 import { FilterChips } from "./FilterChips";
@@ -15,6 +18,10 @@ export function Storefront() {
 	const restaurants = useAgentUIStore((s) => s.restaurants);
 	const browseLabel = useAgentUIStore((s) => s.browseLabel);
 	const showBrowse = useAgentUIStore((s) => s.showBrowse);
+	const showCheckout = useAgentUIStore((s) => s.showCheckout);
+	const setDeliveryAddress = useAgentUIStore((s) => s.setDeliveryAddress);
+	const searchParams = useSearchParams();
+	const checkoutPayload = searchParams.get("cart");
 
 	// Seed the storefront so it looks populated on first load.
 	useEffect(() => {
@@ -22,6 +29,15 @@ export function Storefront() {
 			showBrowse(queryRestaurants({}), "All restaurants", null);
 		}
 	}, [showBrowse]);
+
+	useEffect(() => {
+		const payload = parseCheckoutLink(checkoutPayload);
+		if (!payload) return;
+		if (useCartStore.getState().restoreCheckout(payload)) {
+			setDeliveryAddress(payload.deliveryAddress);
+			showCheckout();
+		}
+	}, [checkoutPayload, setDeliveryAddress, showCheckout]);
 
 	if (view === "restaurant") return <RestaurantView />;
 	if (view === "checkout") return <CheckoutView />;

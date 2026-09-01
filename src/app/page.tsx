@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { AgentDock } from "@/components/agent/AgentDock";
 import { CartSidebar } from "@/components/commerce/CartSidebar";
 import { ItemModal } from "@/components/commerce/ItemModal";
@@ -23,7 +23,9 @@ export default function Home() {
 			<div className="relative flex flex-1 overflow-hidden">
 				<main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
 					<div className="mx-auto max-w-6xl">
-						<Storefront />
+						<Suspense fallback={null}>
+							<Storefront />
+						</Suspense>
 					</div>
 				</main>
 

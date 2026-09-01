@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { getRestaurantById } from "@/lib/catalog";
+import { getMenuForRestaurant, getRestaurantById } from "@/lib/catalog";
+import type { CheckoutLinkPayload } from "@/lib/checkout-link";
 import type { CartItem, MenuItem, MenuOption, OrderTotals } from "@/types";
 
 function makeLineId(itemId: string, options: MenuOption[]): string {
@@ -28,6 +29,7 @@ interface CartState {
 	addItem: (item: MenuItem, options?: MenuOption[], quantity?: number) => void;
 	removeItem: (target: string) => boolean;
 	updateQuantity: (target: string, quantity: number) => void;
+	restoreCheckout: (payload: CheckoutLinkPayload) => boolean;
 	clearCart: () => void;
 	getCount: () => number;
 	getSubtotal: () => number;
@@ -111,6 +113,48 @@ export const useCartStore = create<CartState>((set, get) => ({
 				ci.lineId === line.lineId ? { ...ci, quantity } : ci,
 			),
 		});
+	},
+
+	restoreCheckout: (payload) => {
+		const restaurant = getRestaurantById(payload.restaurantId);
+		if (!restaurant) return false;
+		const menu = getMenuForRestaurant(payload.restaurantId);
+
+		const items = payload.items.flatMap((entry) => {
+			const menuItem = menu.find((item) => item.id === entry.itemId);
+			if (
+				!menuItem ||
+				!Number.isInteger(entry.quantity) ||
+				entry.quantity < 1
+			) {
+				return [];
+			}
+			const availableOptions =
+				menuItem.optionGroups?.flatMap((group) => group.options) ?? [];
+			const selectedOptions = entry.optionIds.flatMap((optionId) => {
+				const option = availableOptions.find(
+					(candidate) => candidate.id === optionId,
+				);
+				return option ? [option] : [];
+			});
+			if (selectedOptions.length !== entry.optionIds.length) return [];
+			return [
+				{
+					lineId: makeLineId(menuItem.id, selectedOptions),
+					menuItem,
+					quantity: entry.quantity,
+					selectedOptions,
+				},
+			];
+		});
+
+		if (items.length !== payload.items.length) return false;
+		set({
+			items,
+			restaurantId: restaurant.id,
+			restaurantName: restaurant.name,
+		});
+		return true;
 	},
 
 	clearCart: () => set({ items: [], restaurantId: null, restaurantName: null }),

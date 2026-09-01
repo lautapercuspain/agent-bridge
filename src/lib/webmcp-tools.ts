@@ -8,6 +8,7 @@ import {
 	queryRestaurants,
 	resolveRestaurant,
 } from "@/lib/catalog";
+import { createCheckoutLink } from "@/lib/checkout-link";
 import { lineUnitPrice, useCartStore } from "@/stores/cart-store";
 import { useOrderStore } from "@/stores/order-store";
 import type { MenuItem, MenuOption, Restaurant } from "@/types";
@@ -505,7 +506,7 @@ export function createToolDefinitions() {
 		"start-checkout": {
 			name: "start-checkout",
 			description:
-				"Open the checkout screen with the current cart and delivery address. Call this before place-order so the user can review the order.",
+				"Prepare a human-review checkout URL for the current cart and delivery address. Return this URL to an external agent or person; opening it restores the order on AgentBridge, where a human can review or place it.",
 			inputSchema: { type: "object", properties: {} },
 			annotations: { readOnlyHint: false, untrustedContentHint: false },
 			execute: async () => {
@@ -517,8 +518,16 @@ export function createToolDefinitions() {
 				}
 				const store = useAgentUIStore.getState();
 				store.showCheckout();
+				const checkoutUrl = createCheckoutLink(
+					window.location.origin,
+					cart.items,
+					cart.restaurantId ?? "",
+					store.deliveryAddress,
+				);
 				return text({
-					message: "Checkout is open. Call place-order to confirm the order.",
+					message:
+						"Checkout is ready for human review. Return checkoutUrl to the user; they can review or place the order there.",
+					checkoutUrl,
 					deliveryAddress: store.deliveryAddress,
 					...cartSummary(),
 				});
