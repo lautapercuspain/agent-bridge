@@ -6,6 +6,7 @@ import { getMenuForRestaurant, getRestaurantById } from "@/lib/catalog";
 import { useAgentUIStore } from "@/lib/webmcp-tools";
 import { lineUnitPrice, useCartStore } from "@/stores/cart-store";
 import { useOrderStore } from "@/stores/order-store";
+import { FoodImage } from "./FoodImage";
 
 export function CheckoutView() {
 	const items = useCartStore((s) => s.items);
@@ -108,13 +109,17 @@ export function CheckoutView() {
 
 				<section className="h-fit rounded-2xl border border-line bg-surface p-5 lg:sticky lg:top-24">
 					<h2 className="font-semibold">{restaurantName ?? "Order"}</h2>
-					<div className="mt-3 space-y-2 border-b border-line pb-3">
+					<div className="mt-3 space-y-2.5 border-b border-line pb-3">
 						{items.map((ci) => (
-							<div
-								key={ci.lineId}
-								className="flex justify-between gap-3 text-sm"
-							>
-								<span className="min-w-0 truncate">
+							<div key={ci.lineId} className="flex items-center gap-3 text-sm">
+								<div className="h-11 w-11 shrink-0">
+									<FoodImage
+										src={ci.menuItem.imageUrl}
+										alt={ci.menuItem.name}
+										className="h-full w-full rounded-lg object-cover"
+									/>
+								</div>
+								<span className="min-w-0 flex-1 truncate">
 									<span className="font-medium">{ci.quantity}×</span>{" "}
 									{ci.menuItem.name}
 								</span>

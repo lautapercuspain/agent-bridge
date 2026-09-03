@@ -115,6 +115,8 @@ export const useCartStore = create<CartState>((set, get) => ({
 		});
 	},
 
+	// Rebuild the cart from a checkout link so itemIds resolve to full menu
+	// items (name, price, imageUrl) straight from the catalog.
 	restoreCheckout: (payload) => {
 		const restaurant = getRestaurantById(payload.restaurantId);
 		if (!restaurant) return false;
