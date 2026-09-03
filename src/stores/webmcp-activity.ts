@@ -48,7 +48,10 @@ export const useWebMCPActivity = create<WebMCPActivityState>((set) => ({
 
 	endCall: (id, ok) =>
 		set((s) => {
-			const base = s.running?.id === id ? s.running : { id, name: "", startedAt: Date.now() };
+			const base =
+				s.running?.id === id
+					? s.running
+					: { id, name: "", startedAt: Date.now() };
 			const done: ToolCall = { ...base, endedAt: Date.now(), ok };
 			return {
 				running: s.running?.id === id ? null : s.running,
