@@ -13,21 +13,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useAgent } from "@/hooks/useAgent";
 import { useVoiceAgent } from "@/hooks/useVoiceAgent";
-
-const TOOL_LABELS: Record<string, string> = {
-	"list-categories": "Browsing categories",
-	"search-restaurants": "Searching restaurants",
-	"find-meals": "Finding meals",
-	"get-restaurant-menu": "Opening the menu",
-	"filter-menu-items": "Filtering the menu",
-	"add-to-cart": "Adding to cart",
-	"remove-from-cart": "Removing from cart",
-	"update-cart-item": "Updating your cart",
-	"get-cart": "Reviewing your cart",
-	"start-checkout": "Opening checkout",
-	"place-order": "Placing your order",
-	"get-order-status": "Checking your order",
-};
+import { toolLabel } from "@/lib/tool-labels";
 
 const SUGGESTIONS = [
 	"Find me a healthy lunch under $15",
@@ -188,10 +174,7 @@ export function AgentDock({ onClose }: { onClose?: () => void }) {
 				{(activeTool || voice.activeTool) && (
 					<div className="flex items-center gap-2 pl-1 text-sm text-brand">
 						<Wrench className="h-4 w-4 animate-pulse" strokeWidth={2} />
-						{TOOL_LABELS[activeTool ?? voice.activeTool ?? ""] ??
-							activeTool ??
-							voice.activeTool}
-						…
+						{toolLabel(activeTool ?? voice.activeTool ?? "")}…
 					</div>
 				)}
 				{isThinking && !activeTool && (

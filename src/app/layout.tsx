@@ -17,7 +17,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
 	title: "AgentBridge — Agent-Native Food Delivery",
 	description:
-		"AgentBridge is an agent-native food ordering marketplace. AI agents browse, build a cart, and check out for you through WebMCP tools.",
+		"AgentBridge exposes 12 in-page WebMCP tools so capable browser agents can search meals, build a cart, and open checkout while the user watches.",
+	other: {
+		webmcp: "enabled",
+		"webmcp-api": "document.modelContext",
+		"webmcp-tools": "12",
+	},
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

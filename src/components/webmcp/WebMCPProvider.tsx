@@ -43,11 +43,16 @@ export function WebMCPProvider({ children }: { children: ReactNode }) {
 				const exec = tool.execute as (args: unknown) => Promise<unknown>;
 				const instrumentedExecute = (async (args: unknown) => {
 					const callId = useWebMCPActivity.getState().startCall(tool.name);
+					const visibleUntil = new Promise((resolve) =>
+						setTimeout(resolve, 650),
+					);
 					try {
 						const result = await exec(args);
+						await visibleUntil;
 						useWebMCPActivity.getState().endCall(callId, true);
 						return result;
 					} catch (err) {
+						await visibleUntil;
 						useWebMCPActivity.getState().endCall(callId, false);
 						throw err;
 					}

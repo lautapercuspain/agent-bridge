@@ -5,6 +5,7 @@ import { useState } from "react";
 import { queryRestaurants } from "@/lib/catalog";
 import { useAgentUIStore } from "@/lib/webmcp-tools";
 import { useCartStore } from "@/stores/cart-store";
+import { WebMCPStatus } from "../webmcp/WebMCPStatus";
 
 function BrandMark() {
 	return (
@@ -101,6 +102,8 @@ export function TopBar({
 						className="w-full rounded-full border border-line bg-surface py-2.5 pl-10 pr-4 text-sm outline-none transition-all duration-300 placeholder:text-muted focus:border-brand/40 focus:ring-4 focus:ring-brand/10"
 					/>
 				</form>
+
+				<WebMCPStatus />
 
 				<button
 					type="button"
