@@ -40,6 +40,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# editor (personal, not shared)
+.vscode/settings.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
