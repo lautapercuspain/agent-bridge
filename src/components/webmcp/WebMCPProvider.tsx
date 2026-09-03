@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useRef } from "react";
 import { createToolDefinitions } from "@/lib/webmcp-tools";
+import { useWebMCPActivity } from "@/stores/webmcp-activity";
 
 export function WebMCPProvider({ children }: { children: ReactNode }) {
 	const initialized = useRef(false);
@@ -15,9 +16,10 @@ export function WebMCPProvider({ children }: { children: ReactNode }) {
 			// Defer to a native WebMCP implementation when present (e.g. an
 			// agentic browser); otherwise install the polyfill so any WebMCP
 			// client — or our own in-page agent — can discover the tools.
-			// Use document.modelContext (the current spec location); reading
-			// navigator.modelContext emits a deprecation warning in Chrome.
-			if (!document.modelContext) {
+			// A usable context must expose registerTool; a bare/stub
+			// document.modelContext (no registerTool) falls back to the polyfill.
+			const native = Boolean(document.modelContext?.registerTool);
+			if (!native) {
 				const { initializeWebMCPPolyfill } = await import(
 					"@mcp-b/webmcp-polyfill"
 				);
@@ -31,10 +33,25 @@ export function WebMCPProvider({ children }: { children: ReactNode }) {
 			}
 
 			const tools = createToolDefinitions();
+			const activity = useWebMCPActivity.getState();
 
 			for (const tool of Object.values(tools)) {
 				const controller = new AbortController();
 				controllersRef.current.push(controller);
+
+				// Wrap execute so every call (from any client) is reported live.
+				const exec = tool.execute as (args: unknown) => Promise<unknown>;
+				const instrumentedExecute = (async (args: unknown) => {
+					const callId = useWebMCPActivity.getState().startCall(tool.name);
+					try {
+						const result = await exec(args);
+						useWebMCPActivity.getState().endCall(callId, true);
+						return result;
+					} catch (err) {
+						useWebMCPActivity.getState().endCall(callId, false);
+						throw err;
+					}
+				}) as WebMCP.ToolExecuteCallback;
 
 				try {
 					await ctx.registerTool(
@@ -44,7 +61,7 @@ export function WebMCPProvider({ children }: { children: ReactNode }) {
 							description: tool.description,
 							inputSchema: tool.inputSchema,
 							annotations: tool.annotations,
-							execute: tool.execute as WebMCP.ToolExecuteCallback,
+							execute: instrumentedExecute,
 						},
 						{ signal: controller.signal },
 					);
@@ -52,6 +69,11 @@ export function WebMCPProvider({ children }: { children: ReactNode }) {
 					console.error(`Failed to register tool ${tool.name}:`, err);
 				}
 			}
+
+			activity.markReady(
+				Object.keys(tools).length,
+				native ? "native" : "polyfill",
+			);
 
 			console.log(
 				`[AgentBridge] Registered ${Object.keys(tools).length} WebMCP tools`,
