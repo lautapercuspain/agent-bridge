@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { getRestaurantById } from "@/lib/catalog";
 import { useAgentUIStore } from "@/lib/webmcp-tools";
 import { useCartStore } from "@/stores/cart-store";
 import type { MenuItem } from "@/types";
@@ -60,6 +61,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
 				<div className="h-24 w-24 shrink-0">
 					<FoodImage
 						src={item.imageUrl}
+						fallbackSrc={getRestaurantById(item.restaurantId)?.imageUrl}
 						alt={item.name}
 						className="h-full w-full rounded-xl object-cover"
 					/>

@@ -45,6 +45,7 @@ export function MealGrid({ meals }: { meals: MealMatch[] }) {
 							<div className="relative overflow-hidden rounded-[1.25rem] ring-1 ring-line">
 								<FoodImage
 									src={item.imageUrl}
+									fallbackSrc={restaurant.imageUrl}
 									alt={item.name}
 									className="aspect-16/10 w-full object-cover transition-transform duration-600 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.05]"
 								/>

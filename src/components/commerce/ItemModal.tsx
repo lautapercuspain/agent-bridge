@@ -2,6 +2,7 @@
 
 import { Minus, Plus, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { getRestaurantById } from "@/lib/catalog";
 import { useAgentUIStore } from "@/lib/webmcp-tools";
 import { useCartStore } from "@/stores/cart-store";
 import type { MenuOption } from "@/types";
@@ -62,6 +63,7 @@ export function ItemModal() {
 				<div className="relative">
 					<FoodImage
 						src={item.imageUrl}
+						fallbackSrc={getRestaurantById(item.restaurantId)?.imageUrl}
 						alt={item.name}
 						className="h-52 w-full object-cover"
 					/>

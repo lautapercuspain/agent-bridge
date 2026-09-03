@@ -115,6 +115,9 @@ export function CheckoutView() {
 								<div className="h-11 w-11 shrink-0">
 									<FoodImage
 										src={ci.menuItem.imageUrl}
+										fallbackSrc={
+											getRestaurantById(ci.menuItem.restaurantId)?.imageUrl
+										}
 										alt={ci.menuItem.name}
 										className="h-full w-full rounded-lg object-cover"
 									/>
