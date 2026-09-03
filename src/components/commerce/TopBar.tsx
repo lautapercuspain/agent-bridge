@@ -1,7 +1,6 @@
 "use client";
 
 import { MapPin, Search, ShoppingBag, Sparkles } from "lucide-react";
-import { useState } from "react";
 import { queryRestaurants } from "@/lib/catalog";
 import { useAgentUIStore } from "@/lib/webmcp-tools";
 import { useCartStore } from "@/stores/cart-store";
@@ -51,9 +50,11 @@ export function TopBar({
 	const total = useCartStore((s) => s.getTotals().total);
 	const deliveryAddress = useAgentUIStore((s) => s.deliveryAddress);
 	const showBrowse = useAgentUIStore((s) => s.showBrowse);
-	const [query, setQuery] = useState("");
+	const query = useAgentUIStore((s) => s.searchQuery);
+	const setQuery = useAgentUIStore((s) => s.setSearchQuery);
 
 	function goHome() {
+		setQuery("");
 		showBrowse(queryRestaurants({}), "All restaurants", null);
 	}
 

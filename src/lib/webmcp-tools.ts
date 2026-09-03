@@ -64,6 +64,7 @@ interface AgentUIState {
 	activeIntent: AgentIntent | null;
 	selectedCategoryId: string | null;
 	browseLabel: string;
+	searchQuery: string;
 	deliveryAddress: string;
 	filters: StorefrontFilters;
 	activeItem: MenuItem | null;
@@ -78,6 +79,7 @@ interface AgentUIState {
 	showCheckout: () => void;
 	showOrder: () => void;
 	setDeliveryAddress: (address: string) => void;
+	setSearchQuery: (query: string) => void;
 	setActiveIntent: (intent: AgentIntent | null) => void;
 	setFilters: (patch: Partial<StorefrontFilters>) => void;
 	setActiveItem: (item: MenuItem | null) => void;
@@ -93,6 +95,7 @@ export const useAgentUIStore = create<AgentUIState>((set) => ({
 	activeIntent: null,
 	selectedCategoryId: null,
 	browseLabel: "",
+	searchQuery: "",
 	deliveryAddress: DEFAULT_ADDRESS,
 	filters: DEFAULT_FILTERS,
 	activeItem: null,
@@ -122,6 +125,7 @@ export const useAgentUIStore = create<AgentUIState>((set) => ({
 	showCheckout: () => set({ view: "checkout" }),
 	showOrder: () => set({ view: "order" }),
 	setDeliveryAddress: (deliveryAddress) => set({ deliveryAddress }),
+	setSearchQuery: (searchQuery) => set({ searchQuery }),
 	setActiveIntent: (activeIntent) => set({ activeIntent }),
 	setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
 	setActiveItem: (activeItem) => set({ activeItem }),
@@ -135,6 +139,7 @@ export const useAgentUIStore = create<AgentUIState>((set) => ({
 			activeIntent: null,
 			selectedCategoryId: null,
 			browseLabel: "",
+			searchQuery: "",
 			filters: DEFAULT_FILTERS,
 			activeItem: null,
 		}),
@@ -323,6 +328,7 @@ export function createToolDefinitions() {
 				if (chips.length) {
 					useAgentUIStore.getState().setActiveIntent({ title: label, chips });
 				}
+				useAgentUIStore.getState().setSearchQuery(label);
 				return text({
 					count: results.length,
 					note: "Pass a restaurant 'id' to get-restaurant-menu.",
@@ -536,7 +542,18 @@ export function createToolDefinitions() {
 					: input.mealType
 						? `${cap(input.mealType)} picks`
 						: "Meal picks";
-				useAgentUIStore.getState().showMeals(results, { title, chips });
+				const store = useAgentUIStore.getState();
+				store.setSearchQuery(
+					[
+						input.query,
+						input.mealType,
+						input.maxPrice != null ? `under $${input.maxPrice}` : null,
+						...(input.dietaryTags ?? []),
+					]
+						.filter(Boolean)
+						.join(" "),
+				);
+				store.showMeals(results, { title, chips });
 				return text({
 					count: results.length,
 					note: "These dishes span multiple restaurants. Pass an item 'id' to add-to-cart; adding from a different restaurant starts a fresh cart.",
