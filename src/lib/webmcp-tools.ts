@@ -5,15 +5,35 @@ import {
 	CATEGORIES,
 	getMenuForRestaurant,
 	getRestaurantById,
+	type MealMatch,
 	queryRestaurants,
 	resolveRestaurant,
+	searchMeals,
 } from "@/lib/catalog";
 import { createCheckoutLink } from "@/lib/checkout-link";
 import { lineUnitPrice, useCartStore } from "@/stores/cart-store";
 import { useOrderStore } from "@/stores/order-store";
-import type { MenuItem, MenuOption, Restaurant } from "@/types";
+import type {
+	DietaryTag,
+	MealType,
+	MenuItem,
+	MenuOption,
+	Restaurant,
+} from "@/types";
 
-export type StorefrontView = "browse" | "restaurant" | "checkout" | "order";
+export type StorefrontView =
+	| "browse"
+	| "restaurant"
+	| "checkout"
+	| "order"
+	| "meals";
+
+// A human-readable summary of what the agent just filtered by, surfaced in the
+// storefront so the person watching sees the intent behind a result set.
+export interface AgentIntent {
+	title: string;
+	chips: string[];
+}
 
 export const DEFAULT_ADDRESS = "Home · 1600 Market St, San Francisco";
 
@@ -40,6 +60,8 @@ interface AgentUIState {
 	restaurants: Restaurant[];
 	currentRestaurant: Restaurant | null;
 	currentMenu: MenuItem[];
+	mealResults: MealMatch[];
+	activeIntent: AgentIntent | null;
 	selectedCategoryId: string | null;
 	browseLabel: string;
 	deliveryAddress: string;
@@ -52,9 +74,11 @@ interface AgentUIState {
 		categoryId?: string | null,
 	) => void;
 	showRestaurant: (restaurant: Restaurant, menu: MenuItem[]) => void;
+	showMeals: (results: MealMatch[], intent: AgentIntent) => void;
 	showCheckout: () => void;
 	showOrder: () => void;
 	setDeliveryAddress: (address: string) => void;
+	setActiveIntent: (intent: AgentIntent | null) => void;
 	setFilters: (patch: Partial<StorefrontFilters>) => void;
 	setActiveItem: (item: MenuItem | null) => void;
 	reset: () => void;
@@ -65,6 +89,8 @@ export const useAgentUIStore = create<AgentUIState>((set) => ({
 	restaurants: [],
 	currentRestaurant: null,
 	currentMenu: [],
+	mealResults: [],
+	activeIntent: null,
 	selectedCategoryId: null,
 	browseLabel: "",
 	deliveryAddress: DEFAULT_ADDRESS,
@@ -78,6 +104,7 @@ export const useAgentUIStore = create<AgentUIState>((set) => ({
 			browseLabel: label,
 			selectedCategoryId: categoryId,
 			currentRestaurant: null,
+			activeIntent: null,
 		}),
 	showRestaurant: (restaurant, menu) =>
 		set({
@@ -85,9 +112,17 @@ export const useAgentUIStore = create<AgentUIState>((set) => ({
 			currentRestaurant: restaurant,
 			currentMenu: menu,
 		}),
+	showMeals: (mealResults, activeIntent) =>
+		set({
+			view: "meals",
+			mealResults,
+			activeIntent,
+			currentRestaurant: null,
+		}),
 	showCheckout: () => set({ view: "checkout" }),
 	showOrder: () => set({ view: "order" }),
 	setDeliveryAddress: (deliveryAddress) => set({ deliveryAddress }),
+	setActiveIntent: (activeIntent) => set({ activeIntent }),
 	setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
 	setActiveItem: (activeItem) => set({ activeItem }),
 	reset: () =>
@@ -96,6 +131,8 @@ export const useAgentUIStore = create<AgentUIState>((set) => ({
 			restaurants: [],
 			currentRestaurant: null,
 			currentMenu: [],
+			mealResults: [],
+			activeIntent: null,
 			selectedCategoryId: null,
 			browseLabel: "",
 			filters: DEFAULT_FILTERS,
@@ -118,9 +155,30 @@ function resolveMenuItem(idOrName: string): MenuItem | undefined {
 	const found = search(state.currentMenu);
 	if (found) return found;
 	if (state.currentRestaurant) {
-		return search(getMenuForRestaurant(state.currentRestaurant.id));
+		const inRestaurant = search(
+			getMenuForRestaurant(state.currentRestaurant.id),
+		);
+		if (inRestaurant) return inRestaurant;
+	}
+	// find-meals shows dishes spanning many restaurants; resolve from those.
+	const inMeals = state.mealResults.find(
+		(r) => r.item.id === idOrName || r.item.name.toLowerCase() === q,
+	)?.item;
+	if (inMeals) return inMeals;
+	// Ids look like "<restaurantId>-<n>"; resolve directly from that menu.
+	const dash = idOrName.lastIndexOf("-");
+	if (dash > 0) {
+		const rid = idOrName.slice(0, dash);
+		if (getRestaurantById(rid)) {
+			const byId = getMenuForRestaurant(rid).find((m) => m.id === idOrName);
+			if (byId) return byId;
+		}
 	}
 	return undefined;
+}
+
+function cap(s: string): string {
+	return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function text(obj: unknown) {
@@ -248,6 +306,23 @@ export function createToolDefinitions() {
 				useAgentUIStore
 					.getState()
 					.showBrowse(results, label, input.category ?? null);
+				const chips: string[] = [];
+				if (input.query) chips.push(`"${input.query}"`);
+				if (input.category) {
+					chips.push(
+						CATEGORIES.find((c) => c.id === input.category)?.name ??
+							input.category,
+					);
+				}
+				if (input.cuisine) chips.push(cap(input.cuisine));
+				if (input.priceLevel) chips.push(input.priceLevel);
+				if (input.freeDelivery) chips.push("Free delivery");
+				if (input.offers) chips.push("Offers");
+				if (input.topRated) chips.push("Top rated");
+				if (input.under30) chips.push("Under 30 min");
+				if (chips.length) {
+					useAgentUIStore.getState().setActiveIntent({ title: label, chips });
+				}
 				return text({
 					count: results.length,
 					note: "Pass a restaurant 'id' to get-restaurant-menu.",
@@ -398,6 +473,90 @@ export function createToolDefinitions() {
 						section: m.category,
 						dietaryTags: m.dietaryTags,
 					})),
+				});
+			},
+		},
+
+		"find-meals": {
+			name: "find-meals",
+			title: "Find meals across restaurants",
+			description:
+				"Search individual dishes ACROSS ALL restaurants in one call by intent, budget, and meal time — the fastest way to answer requests like 'a healthy lunch under $15' or 'something spicy for dinner'. Returns matching dishes with their restaurant, price, and image, ranked by relevance, and updates the storefront the user is watching. Prefer this over opening menus one at a time. Then call add-to-cart with an item id. Intent words understood in query include: healthy, light, hearty, spicy, sweet, protein, comfort — plus any dish or cuisine name. maxPrice applies per dish; confirm the full order total with get-cart because fees and tax are added at checkout.",
+			inputSchema: {
+				type: "object",
+				properties: {
+					query: {
+						type: "string",
+						description:
+							"Dish, cuisine, or intent keywords (e.g. 'healthy bowl', 'spicy', 'comfort')",
+					},
+					mealType: {
+						type: "string",
+						enum: ["breakfast", "lunch", "dinner", "dessert", "drink", "side"],
+						description: "Filter by meal time or course",
+					},
+					maxPrice: {
+						type: "number",
+						description: "Maximum price per dish in USD",
+					},
+					dietaryTags: {
+						type: "array",
+						items: { type: "string" },
+						description:
+							"Dietary filters: vegetarian, vegan, gluten-free, dairy-free, nut-free, spicy, halal, kosher",
+					},
+					limit: {
+						type: "number",
+						description: "Maximum number of dishes to return (default 12)",
+					},
+				},
+			},
+			annotations: { readOnlyHint: true, untrustedContentHint: false },
+			execute: async (input: {
+				query?: string;
+				mealType?: MealType;
+				maxPrice?: number;
+				dietaryTags?: string[];
+				limit?: number;
+			}) => {
+				const results = searchMeals({
+					query: input.query,
+					mealType: input.mealType,
+					maxPrice: input.maxPrice,
+					dietaryTags: input.dietaryTags as DietaryTag[] | undefined,
+					limit: input.limit,
+				});
+				const chips: string[] = [];
+				if (input.mealType) chips.push(cap(input.mealType));
+				if (input.query) chips.push(`"${input.query}"`);
+				if (input.maxPrice != null) chips.push(`Under $${input.maxPrice}`);
+				for (const t of input.dietaryTags ?? []) chips.push(cap(t));
+				const title = input.query
+					? cap(input.query)
+					: input.mealType
+						? `${cap(input.mealType)} picks`
+						: "Meal picks";
+				useAgentUIStore.getState().showMeals(results, { title, chips });
+				return text({
+					count: results.length,
+					note: "These dishes span multiple restaurants. Pass an item 'id' to add-to-cart; adding from a different restaurant starts a fresh cart.",
+					meals: results.map(({ item, restaurant }) => ({
+						id: item.id,
+						name: item.name,
+						price: item.price,
+						restaurantId: restaurant.id,
+						restaurant: restaurant.name,
+						rating: restaurant.rating,
+						deliveryFee: restaurant.deliveryFee,
+						mealType: item.mealType ?? [],
+						dietaryTags: item.dietaryTags,
+						image: item.imageUrl,
+					})),
+					...(results.length === 0
+						? {
+								hint: "No dishes matched. Relax the budget or broaden the query, then present the closest options.",
+							}
+						: {}),
 				});
 			},
 		},

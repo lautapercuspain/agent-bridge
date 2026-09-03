@@ -1,4 +1,10 @@
-import type { Category, MenuItem, Restaurant } from "@/types";
+import type {
+	Category,
+	DietaryTag,
+	MealType,
+	MenuItem,
+	Restaurant,
+} from "@/types";
 
 // ---------------------------------------------------------------------------
 // AgentBridge is its own delivery marketplace: all restaurants, menus, and
@@ -1005,21 +1011,133 @@ const MENU_TEMPLATES: Record<string, ItemSeed[]> = {
 	],
 };
 
+// Intent keywords → derived tag, so free-text vocabulary like "healthy" or
+// "hearty" resolves to something the menu data can actually be filtered on.
+const INTENT_KEYWORDS: Record<string, string[]> = {
+	healthy: [
+		"salad",
+		"bowl",
+		"grain",
+		"greens",
+		"quinoa",
+		"kale",
+		"avocado",
+		"poke",
+		"veggie",
+		"fresh",
+	],
+	light: ["salad", "soup", "greens", "wrap", "broth"],
+	hearty: [
+		"burger",
+		"pizza",
+		"steak",
+		"curry",
+		"ramen",
+		"platter",
+		"loaded",
+		"fries",
+		"double",
+	],
+	spicy: [
+		"spicy",
+		"chili",
+		"chilli",
+		"sriracha",
+		"jalapeno",
+		"jalapeño",
+		"hot",
+	],
+	sweet: [
+		"shake",
+		"chocolate",
+		"cake",
+		"tart",
+		"donut",
+		"doughnut",
+		"ice cream",
+		"brownie",
+		"cookie",
+		"sundae",
+		"caramel",
+	],
+	protein: [
+		"chicken",
+		"beef",
+		"steak",
+		"salmon",
+		"tofu",
+		"egg",
+		"pork",
+		"shrimp",
+		"lamb",
+		"tuna",
+		"turkey",
+	],
+	comfort: ["burger", "pizza", "fries", "mac", "fried", "cheese", "noodle"],
+};
+
+// Derive meal-time and intent facets from a seed's section, name, description,
+// price, and dietary tags so items are searchable by intent, not just name.
+function deriveMealFacets(seed: ItemSeed): {
+	mealType: MealType[];
+	tags: string[];
+} {
+	const section = seed.category.toLowerCase();
+	const hay = `${seed.name} ${seed.description}`.toLowerCase();
+	const mealType = new Set<MealType>();
+
+	if (/drink|coffee|juice|beverage|shake|smoothie/.test(section)) {
+		mealType.add("drink");
+	}
+	if (/dessert|frozen|bakery|sweet/.test(section)) mealType.add("dessert");
+	if (/side|starter|appetiz/.test(section)) mealType.add("side");
+	if (
+		/coffee|bakery/.test(section) ||
+		/egg|pancake|waffle|toast|bacon|omelet|benedict|croissant|bagel|oatmeal|latte|espresso|cappuccino|breakfast|granola|yogurt/.test(
+			hay,
+		)
+	) {
+		mealType.add("breakfast");
+	}
+
+	const isMain =
+		!mealType.has("drink") && !mealType.has("dessert") && !mealType.has("side");
+	if (isMain) {
+		mealType.add("lunch");
+		mealType.add("dinner");
+	}
+	if (/bowl|salad|wrap|sandwich/.test(hay)) mealType.add("lunch");
+
+	const tags = new Set<string>(seed.dietaryTags);
+	for (const [tag, keywords] of Object.entries(INTENT_KEYWORDS)) {
+		if (keywords.some((k) => hay.includes(k))) tags.add(tag);
+	}
+	if (isMain && seed.price <= 8) tags.add("light");
+	if (seed.price >= 13) tags.add("hearty");
+
+	return { mealType: [...mealType], tags: [...tags] };
+}
+
 export function getMenuForRestaurant(restaurantId: string): MenuItem[] {
 	const template = TEMPLATE_BY_RESTAURANT[restaurantId] ?? "burgers";
 	const seeds = MENU_TEMPLATES[template] ?? MENU_TEMPLATES.burgers;
-	return seeds.map((seed, i) => ({
-		id: `${restaurantId}-${i}`,
-		restaurantId,
-		name: seed.name,
-		description: seed.description,
-		price: seed.price,
-		category: seed.category,
-		dietaryTags: seed.dietaryTags,
-		imageUrl: seed.image,
-		popular: seed.popular ?? false,
-		optionGroups: seed.optionGroups,
-	}));
+	return seeds.map((seed, i) => {
+		const { mealType, tags } = deriveMealFacets(seed);
+		return {
+			id: `${restaurantId}-${i}`,
+			restaurantId,
+			name: seed.name,
+			description: seed.description,
+			price: seed.price,
+			category: seed.category,
+			dietaryTags: seed.dietaryTags,
+			imageUrl: seed.image,
+			popular: seed.popular ?? false,
+			optionGroups: seed.optionGroups,
+			mealType,
+			tags,
+		};
+	});
 }
 
 export function getRestaurantById(id: string): Restaurant | undefined {
@@ -1103,4 +1221,59 @@ export function queryRestaurants(params: RestaurantQuery = {}): Restaurant[] {
 			);
 	}
 	return list;
+}
+
+export interface MealQuery {
+	query?: string;
+	maxPrice?: number;
+	dietaryTags?: DietaryTag[];
+	mealType?: MealType;
+	limit?: number;
+}
+
+export interface MealMatch {
+	item: MenuItem;
+	restaurant: Restaurant;
+}
+
+// Search individual dishes across every open restaurant at once, ranked by
+// text relevance, popularity, and restaurant rating. This is what lets an
+// agent answer "a healthy lunch under $15" in a single call.
+export function searchMeals(params: MealQuery = {}): MealMatch[] {
+	const limit = params.limit ?? 12;
+	const q = params.query?.trim().toLowerCase();
+	const words = q ? q.split(/\s+/).filter(Boolean) : [];
+	const scored: { item: MenuItem; restaurant: Restaurant; score: number }[] =
+		[];
+
+	for (const restaurant of RESTAURANTS) {
+		if (!restaurant.isOpen) continue;
+		for (const item of getMenuForRestaurant(restaurant.id)) {
+			if (params.maxPrice != null && item.price > params.maxPrice) continue;
+			if (
+				params.dietaryTags?.length &&
+				!params.dietaryTags.every((t) => item.dietaryTags.includes(t))
+			) {
+				continue;
+			}
+			if (params.mealType && !(item.mealType ?? []).includes(params.mealType)) {
+				continue;
+			}
+
+			let score = restaurant.rating + (item.popular ? 2 : 0);
+			if (words.length) {
+				const hay =
+					`${item.name} ${item.description} ${(item.tags ?? []).join(" ")} ${restaurant.cuisine}`.toLowerCase();
+				const hits = words.filter((w) => hay.includes(w)).length;
+				if (hits === 0) continue;
+				score += hits * 10;
+			}
+			scored.push({ item, restaurant, score });
+		}
+	}
+
+	scored.sort((a, b) => b.score - a.score || a.item.price - b.item.price);
+	return scored
+		.slice(0, limit)
+		.map(({ item, restaurant }) => ({ item, restaurant }));
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { queryRestaurants } from "@/lib/catalog";
@@ -9,6 +10,8 @@ import { useCartStore } from "@/stores/cart-store";
 import { CategoryRail } from "./CategoryRail";
 import { CheckoutView } from "./CheckoutView";
 import { FilterChips } from "./FilterChips";
+import { IntentBar } from "./IntentBar";
+import { MealGrid } from "./MealGrid";
 import { OrderView } from "./OrderView";
 import { RestaurantGrid } from "./RestaurantGrid";
 import { RestaurantView } from "./RestaurantView";
@@ -16,6 +19,8 @@ import { RestaurantView } from "./RestaurantView";
 export function Storefront() {
 	const view = useAgentUIStore((s) => s.view);
 	const restaurants = useAgentUIStore((s) => s.restaurants);
+	const mealResults = useAgentUIStore((s) => s.mealResults);
+	const activeIntent = useAgentUIStore((s) => s.activeIntent);
 	const browseLabel = useAgentUIStore((s) => s.browseLabel);
 	const showBrowse = useAgentUIStore((s) => s.showBrowse);
 	const showCheckout = useAgentUIStore((s) => s.showCheckout);
@@ -43,10 +48,34 @@ export function Storefront() {
 	if (view === "checkout") return <CheckoutView />;
 	if (view === "order") return <OrderView />;
 
+	if (view === "meals") {
+		return (
+			<div className="space-y-5">
+				<button
+					type="button"
+					onClick={() =>
+						showBrowse(queryRestaurants({}), "All restaurants", null)
+					}
+					className="flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-ink"
+				>
+					<ArrowLeft className="h-4 w-4" strokeWidth={2} />
+					All restaurants
+				</button>
+				{activeIntent && (
+					<IntentBar intent={activeIntent} count={mealResults.length} />
+				)}
+				<MealGrid meals={mealResults} />
+			</div>
+		);
+	}
+
 	return (
 		<div className="space-y-6">
 			<CategoryRail />
 			<FilterChips />
+			{activeIntent && (
+				<IntentBar intent={activeIntent} count={restaurants.length} />
+			)}
 			<div>
 				<div className="mb-4 flex items-baseline justify-between">
 					<h1 className="text-xl font-semibold tracking-tight capitalize sm:text-2xl">

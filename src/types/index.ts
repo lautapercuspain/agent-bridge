@@ -45,6 +45,9 @@ export interface MenuItem {
 	imageUrl?: string;
 	popular: boolean;
 	optionGroups?: MenuOptionGroup[];
+	// Intent facets used for cross-restaurant, intent-aware meal search.
+	mealType?: MealType[];
+	tags?: string[];
 }
 
 export type DietaryTag =
@@ -56,6 +59,14 @@ export type DietaryTag =
 	| "spicy"
 	| "halal"
 	| "kosher";
+
+export type MealType =
+	| "breakfast"
+	| "lunch"
+	| "dinner"
+	| "dessert"
+	| "drink"
+	| "side";
 
 export interface CartItem {
 	lineId: string;

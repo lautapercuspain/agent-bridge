@@ -17,6 +17,7 @@ import { useVoiceAgent } from "@/hooks/useVoiceAgent";
 const TOOL_LABELS: Record<string, string> = {
 	"list-categories": "Browsing categories",
 	"search-restaurants": "Searching restaurants",
+	"find-meals": "Finding meals",
 	"get-restaurant-menu": "Opening the menu",
 	"filter-menu-items": "Filtering the menu",
 	"add-to-cart": "Adding to cart",
