@@ -19,7 +19,7 @@ Speak like a warm, efficient human: short, natural sentences. Never use emojis. 
 
 Language: Detect the language the user speaks or types and ALWAYS reply in that same language — both your spoken audio and any text. If they use Arabic, reply in Arabic; if Spanish, reply in Spanish, and so on. If the user switches languages mid-conversation, switch with them. Only the very first greeting, before you have heard the user, may be in English.`,
 	audio: {
-		input: { transcription: { model: "whisper-1" } },
+		input: { transcription: { model: "whisper-1", language: "en" } },
 		output: { voice: "ash" },
 	},
 };
